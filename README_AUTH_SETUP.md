@@ -247,3 +247,123 @@ Table Editor prüfen, dass `user_settings` mit aktivem RLS existiert.
 **GitHub Pages:** die geänderte `TradeLens_AI_App.html` sowie die neue
 `tradelens-data.js` in das Repository hochladen (gleicher Ordner wie die
 übrigen Dateien). `index.html`/`TradeLens_AI_Login.html` bleiben unverändert.
+
+---
+
+# Phase 3 – Chart-/Screenshot-Upload (Supabase Storage)
+
+Phase 3 macht die vorhandene Upload-Seite echt: Datei aus Mediathek/Datei/Kamera
+wählen, validieren, per **resumablem TUS-Upload** in einen **privaten** Bucket
+laden, Metadaten in `analysis_uploads` speichern, Vorschau über kurzlebige
+Signed URLs, Ersetzen/Entfernen mit Rollback, und nach Reload den letzten
+offenen Upload wiederherstellen. **Keine KI-Analyse** in dieser Phase.
+
+## 1. SQL ausführen
+
+Supabase → SQL Editor → **`supabase_phase3_uploads.sql`** einfügen und **Run**.
+Voraussetzung: Phase 1 + 2 wurden ausgeführt (Funktion `tl_set_updated_at()`).
+Das Skript ist idempotent und legt an: Tabelle `public.analysis_uploads`
+(+ CHECK-Constraints), Rechte (anon entzogen, authenticated nur SELECT/INSERT/
+UPDATE/DELETE), `updated_at`-Trigger, RLS-Policies für die Tabelle **und** für
+`storage.objects` (Bucket `chart-uploads`). Es legt **keinen** Bucket an.
+
+## 2. Privaten Bucket im Dashboard anlegen
+
+Supabase → **Storage** → **New bucket**:
+
+- **Name:** `chart-uploads`
+- **Public bucket:** AUS (privat)
+- **File size limit:** 20 MB
+- **Allowed MIME types:** `image/png`, `image/jpeg`, `image/webp`
+
+Danach ist alles aktiv – die RLS-Policies aus dem SQL greifen auf diesem Bucket.
+
+## 3. Erstellte Storage-Policies (storage.objects, Bucket chart-uploads)
+
+Jeweils nur für Rolle `authenticated`, Ordnerprüfung
+`(storage.foldername(name))[1] = (select auth.uid())::text`:
+
+- `chart_uploads_select_own` (SELECT, USING)
+- `chart_uploads_insert_own` (INSERT, WITH CHECK)
+- `chart_uploads_delete_own` (DELETE, USING)
+
+**Keine** UPDATE-Policy (Dateien werden nie überschrieben; „Ersetzen“ nutzt
+immer einen neuen UUID-Pfad) und **keine** öffentliche SELECT-Policy.
+
+## 4. Skript-Reihenfolge
+
+1. `tradelens-config.js`
+2. Supabase-CDN
+3. `tradelens-auth.js`
+4. `tradelens-data.js`
+5. **TUS-Client-CDN** (`tus-js-client`, lädt `window.tus`)
+6. **`tradelens-upload.js`** ← neu
+7. App-Initialisierung (`tlBootstrap()`)
+
+Lädt der TUS-Client nicht, wird kein Upload gestartet; beim Klick erscheint eine
+verständliche Meldung („Upload-Komponente konnte nicht geladen werden …“).
+
+## 5. Upload-Ablauf
+
+- **Auswahl:** Bibliothek/Datei (`accept="image/png,image/jpeg,image/webp"`),
+  Kamera (`accept="image/*"` + `capture="environment"`). Alle drei Wege nutzen
+  dieselbe Validierung + Pipeline. Ein Abbruch der Auswahl ist kein Fehler.
+- **Validierung (clientseitig):** Datei vorhanden, Größe > 0, ≤ 20 MB, MIME
+  exakt PNG/JPEG/WebP; HEIC/HEIF werden verständlich abgelehnt. Keine
+  reine Endungsprüfung. Bei ungültiger Datei kein Storage-/DB-Aufruf.
+- **UUID** wird clientseitig erzeugt und sowohl als `analysis_uploads.id` als
+  auch im Storage-Pfad verwendet: `<user_id>/<upload_id>.<ext>`. Die Endung
+  stammt ausschließlich aus dem MIME-Type (png/jpg/webp), nie aus dem Original.
+- **TUS-Upload:** echter Byte-Fortschritt über `onProgress(sent,total)`,
+  Retry bei kurzen Netzunterbrechungen, `x-upsert: false`, nur der
+  Access-Token als `Authorization`-Header. Chunk-Größe 6 MB (Supabase-Vorgabe).
+- **Reihenfolge:** erst Storage-Upload, **dann** Metadaten-Insert. Schlägt der
+  Insert fehl, wird die hochgeladene Datei per Storage-API wieder gelöscht
+  (Rollback) und der Button bleibt deaktiviert.
+- **Vorschau** über `createSignedUrl(path, 300)` – nie öffentliche URLs, nie in
+  localStorage. Im benutzerspezifischen Store steht höchstens die Upload-ID.
+- **Status-Zustände:** idle, validating, uploading, saving, success, error.
+- **„Weiter zur Analyse“:** im Idle/Upload deaktiviert, erst nach erfolgreichem
+  Storage-Upload **und** DB-Insert aktiv. Öffnet **keine** Fake-Analyse, sondern
+  zeigt nur: „Upload gespeichert. Die KI-Analyse wird im nächsten Schritt
+  verbunden.“ Die Mock-Ansicht `a-setup` bleibt im Code, ist aber vom
+  Upload-Ablauf nicht mehr erreichbar.
+
+**Ersetzen:** Zuerst wird der neue Upload vollständig (Storage + DB) erfolgreich
+abgeschlossen, **erst danach** werden alte Storage-Datei und alter DB-Eintrag
+entfernt. Schlägt der neue Upload fehl, bleibt der alte unverändert erhalten.
+
+**Entfernen:** Erst Storage-Datei (per API), dann DB-Eintrag. Scheitert der
+DB-Delete nach erfolgreichem Storage-Delete, wird erneut versucht; gelingt das
+nicht, wird ehrlich gemeldet, dass nicht vollständig bereinigt wurde.
+Storage-Dateien werden **niemals** per SQL gelöscht.
+
+**Reload:** Nach gültiger Session wird der neueste eigene Datensatz mit
+`status='uploaded'` (created_at desc, limit 1) geladen, eine neue Signed URL
+erzeugt und die Vorschau hergestellt.
+
+**Benutzertrennung:** Alle Uploads strikt nach `user_id` (RLS in Tabelle und
+Storage). Nutzer A sieht nie Uploads/Vorschauen von Nutzer B. Beim Logout werden
+Signed URL (Bild aus dem DOM) und der In-Memory-Upload geleert; benutzerspezifische
+lokale Daten bleiben erhalten. Keine Bilddaten und keine Signed URL im
+localStorage. Hinweis: Der TUS-Client kann temporär einen Resume-Fingerprint
+(Upload-URL, keine Signed-Download-URL) ablegen; dieser wird bei Erfolg entfernt
+(`removeFingerprintOnSuccess`).
+
+## 6. Watchlist-Fix
+
+Nur der sichtbare Überlauf der neutralen Watchlist-Karte wurde behoben
+(`white-space:nowrap` → Zeilenumbruch erlaubt, `line-height` gesetzt). „NOCH
+NICHT VERBUNDEN“ und der Untertext sind vollständig lesbar; keine Watchlist-
+Funktion ergänzt.
+
+## 7. Was du auf GitHub hochladen musst
+
+- **Neu:** `tradelens-upload.js`
+- **Ersetzen:** `TradeLens_AI_App.html`
+- (Die SQL-Datei `supabase_phase3_uploads.sql` wird nur in Supabase ausgeführt,
+  nicht auf GitHub Pages benötigt.)
+
+Unverändert bleiben: `tradelens-config.js`, `tradelens-auth.js`,
+`tradelens-data.js`, `index.html`, `TradeLens_AI_Login.html`, `APP_MODE`,
+Supabase-Zugangsdaten und die GitHub-Pages-Pfade.

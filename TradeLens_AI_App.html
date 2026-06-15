@@ -2218,7 +2218,10 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 <div class="title-center"><h1>UPLOAD</h1><p>Lade deinen Chart oder Screenshot hoch</p></div>
 <div class="icon-btn" style="border-radius:50%"><svg fill="none" height="20" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="20"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg></div>
 </div>
-<div class="dropzone fade-in" onclick="pulse(this)">
+<input id="up-lib" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="onUploadPick(event)">
+<input id="up-file" type="file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="onUploadPick(event)">
+<input id="up-cam" type="file" accept="image/*" capture="environment" style="display:none" onchange="onUploadPick(event)">
+<div class="dropzone fade-in" onclick="pulse(this);openUploadPicker('lib')">
 <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
 <div class="dots"></div>
 <div class="cloud"><svg fill="none" height="88" stroke="currentColor" stroke-width="2.4" viewbox="0 0 78 70" width="98"><path d="M22 50a13 13 0 0 1-1-26 18 18 0 0 1 35 3 11 11 0 0 1-3 23H22z"></path><path d="M39 48V28M39 28l-8 8M39 28l8 8" stroke-width="3"></path></svg></div>
@@ -2227,9 +2230,9 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 <div class="dz-sub">per Drag &amp; Drop oder aus Galerie</div>
 </div>
 <div class="grid3 mt">
-<div class="pick"><div class="pi"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M12 3l8 4-8 4-8-4 8-4zM4 12l8 4 8-4M4 16l8 4 8-4"></path></svg></div><div class="pt">Bibliothek</div><div class="ps">Aus deinen Dateien</div></div>
-<div class="pick"><div class="pi"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg></div><div class="pt">Datei auswählen</div><div class="ps">Vom Gerät wählen</div></div>
-<div class="pick v"><div class="pi"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div><div class="pt">Kamera</div><div class="ps">Foto aufnehmen</div></div>
+<div class="pick" onclick="openUploadPicker('lib')"><div class="pi"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M12 3l8 4-8 4-8-4 8-4zM4 12l8 4 8-4M4 16l8 4 8-4"></path></svg></div><div class="pt">Bibliothek</div><div class="ps">Aus deinen Dateien</div></div>
+<div class="pick" onclick="openUploadPicker('file')"><div class="pi"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></svg></div><div class="pt">Datei auswählen</div><div class="ps">Vom Gerät wählen</div></div>
+<div class="pick v" onclick="openUploadPicker('cam')"><div class="pi"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div><div class="pt">Kamera</div><div class="ps">Foto aufnehmen</div></div>
 </div>
 <div class="gf violet mt-l">
 <div class="in">
@@ -2244,15 +2247,17 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 </div>
 <div class="gf green mt" id="uploadStatus">
 <div class="in" style="display:flex;align-items:center;gap:13px">
-<div class="status-hex"><svg fill="none" height="22" stroke="currentColor" stroke-width="2.6" viewbox="0 0 24 24" width="22"><path d="M20 6L9 17l-5-5"></path></svg></div>
-<div style="flex:1">
-<div class="row"><div><div style="font-family:var(--f-disp);font-weight:700;color:var(--green);font-size:14px">Upload abgeschlossen</div><div class="sub" style="font-size:12px">Datei bereit für die Analyse</div></div><span class="pct-pill">100%</span></div>
-<div class="progress"><span></span></div>
+<div class="status-hex" id="up-ic" style="color:var(--txt-2)"><svg fill="none" height="22" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24" width="22"><rect height="18" rx="2" width="18" x="3" y="3"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></div>
+<div style="flex:1;min-width:0">
+<div class="row"><div style="min-width:0"><div id="up-title" style="font-family:var(--f-disp);font-weight:700;color:var(--txt-2);font-size:14px">Noch kein Upload</div><div id="up-sub" class="sub" style="font-size:12px">Wähle eine Datei, um zu starten.</div></div><span class="pct-pill" id="up-pct" style="opacity:.5">0%</span></div>
+<div class="progress"><span id="up-prog" style="width:0%"></span></div>
+<div id="up-preview-wrap" style="display:none;margin-top:10px"><img id="up-preview" alt="Vorschau des Uploads" style="width:100%;max-height:180px;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#000"></div>
+<div id="up-actions" style="display:none;gap:8px;margin-top:10px"><button class="btn-blue" style="flex:1;justify-content:center" onclick="openUploadPicker('replace')">Ersetzen</button><button class="btn-blue" style="flex:1;justify-content:center;border-color:rgba(255,90,120,0.5);background:linear-gradient(90deg,#5b2741,#7a2f3f)" onclick="removeCurrentUpload()">Entfernen</button></div>
 </div>
 </div>
 </div>
-<div class="hint mt-s"><svg fill="none" height="15" stroke="var(--cyan)" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg> Unterstützte Formate: PNG, JPG, JPEG · Max. 20 MB</div>
-<button class="btn-primary mt" onclick="setupStep()">
+<div class="hint mt-s"><svg fill="none" height="15" stroke="var(--cyan)" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg> Unterstützte Formate: PNG, JPG, WEBP · Max. 20 MB</div>
+<button class="btn-primary mt" id="btn-weiter" disabled style="opacity:.45;pointer-events:none" onclick="weiterZurAnalyse()">
 <svg fill="none" height="22" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24" width="22"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 0V4a3 3 0 0 0-3-1zM15 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 0"></path></svg>
 <span class="sp">WEITER ZUR ANALYSE</span>
 <svg fill="none" height="20" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24" width="20"><path d="M9 6l6 6-6 6"></path></svg>
@@ -2574,7 +2579,7 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 <div class="card pad">
 <div class="label" style="display:flex;gap:6px;align-items:center"><svg fill="none" height="13" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="13"><path d="M12 2l2.4 7.4H22l-6 4.5 2.3 7.1L12 16.5 5.7 21l2.3-7.1-6-4.5h7.6z"></path></svg>Watchlist Sync</div>
 <div class="sub" style="font-size:10.5px;margin-top:8px">Synchronisiere deine Watchlists über alle Geräte in Echtzeit.</div>
-<div class="broker"><div class="bi"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"></path></svg></div><div style="flex:1"><div style="font-family:var(--f-disp);font-weight:700;font-size:11px;color:var(--txt-2);white-space:nowrap">NOCH NICHT VERBUNDEN</div><div class="sub" style="font-size:10px;white-space:nowrap">Keine Synchronisierung aktiv</div></div></div>
+<div class="broker"><div class="bi"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"></path></svg></div><div style="flex:1"><div style="font-family:var(--f-disp);font-weight:700;font-size:11px;color:var(--txt-2);line-height:1.25">NOCH NICHT VERBUNDEN</div><div class="sub" style="font-size:10px;line-height:1.25">Keine Synchronisierung aktiv</div></div></div>
 <div class="link-row"><span class="ln" style="font-size:12px;color:var(--cyan)">Watchlist verwalten</span><svg fill="none" height="15" stroke="var(--cyan)" stroke-width="2" viewbox="0 0 24 24" width="15"><path d="M9 6l6 6-6 6"></path></svg></div>
 </div>
 </div>
@@ -3174,7 +3179,7 @@ function applySettingsToUI(){
   renderAccountRows();
 }
 /* Logout: In-Memory-Zustand leeren (benutzerspezifische lokale Daten bleiben erhalten) */
-function tlAppLogout(){resetInMemory();if(typeof tlLogout==='function')tlLogout();else if(window.TLAuth&&TLAuth.gotoLogin)TLAuth.gotoLogin();}
+function tlAppLogout(){if(typeof uploadCleanup==='function')uploadCleanup();resetInMemory();if(typeof tlLogout==='function')tlLogout();else if(window.TLAuth&&TLAuth.gotoLogin)TLAuth.gotoLogin();}
 /* Lokalen (benutzergebundenen) Zustand rendern */
 function tlBootLocal(){
   loadStore();loadProfile();applyProfile();
@@ -3200,8 +3205,86 @@ function tlBootstrap(){
       renderProfileHeader(meta?meta.display_name:'',TL_EMAIL,meta?meta.created_at:null);
       applySettingsToUI();
       if(typeof renderOverview==='function')renderOverview();
+      if(typeof uploadBootstrap==='function')uploadBootstrap();
     });
   });
+}
+/* ===================== Phase 3: Upload-UI (Vanilla, nutzt window.TLUpload) ===================== */
+var UP={current:null,busy:false,pendingReplace:false}; // current = analysis_uploads-Zeile (in-memory), KEINE Bilddaten
+function upEl(id){return document.getElementById(id);}
+function openUploadPicker(which){
+  if(UP.busy)return;
+  if(window.TLUpload && !TLUpload.tusReady()){ uploadState('error','Upload-Komponente konnte nicht geladen werden. Bitte Seite neu laden.'); return; }
+  UP.pendingReplace=(which==='replace');
+  var map={lib:'up-lib',file:'up-file',cam:'up-cam',replace:'up-lib'};
+  var el=upEl(map[which]||'up-lib'); if(el){el.value='';el.click();}
+}
+function onUploadPick(ev){
+  var file=ev&&ev.target&&ev.target.files&&ev.target.files[0];
+  if(!file){return;} // Abbruch der Auswahl ist kein Fehler
+  var isRep=UP.pendingReplace===true; UP.pendingReplace=false;
+  startUpload(file,isRep);
+}
+function uploadProgress(p){var prog=upEl('up-prog'),pct=upEl('up-pct');if(prog)prog.style.width=p+'%';if(pct){pct.style.opacity='1';pct.textContent=p+'%';}}
+function showPreview(url){var w=upEl('up-preview-wrap'),img=upEl('up-preview');if(img)img.src=url||'';if(w)w.style.display=url?'block':'none';}
+function uploadMeta(row){var b=row.size_bytes||0;var sz=b>=1048576?((Math.round(b/104857.6)/10)+' MB'):((Math.round(b/1024))+' KB');return (row.original_name?row.original_name+' · ':'')+sz;}
+function uploadState(state,msg){
+  var ic=upEl('up-ic'),title=upEl('up-title'),sub=upEl('up-sub'),pct=upEl('up-pct'),prog=upEl('up-prog'),
+      actions=upEl('up-actions'),prevWrap=upEl('up-preview-wrap'),card=upEl('uploadStatus'),btn=upEl('btn-weiter');
+  var GREEN='var(--green)',CYAN='var(--cyan)',RED='#ff5a78',MUT='var(--txt-2)';
+  function setBtn(on){if(!btn)return;btn.disabled=!on;btn.style.opacity=on?'1':'.45';btn.style.pointerEvents=on?'auto':'none';}
+  function accent(c){if(ic)ic.style.color=c;if(title)title.style.color=c;if(card)card.style.boxShadow='0 0 20px '+(c===RED?'rgba(255,90,120,.16)':'rgba(0,255,156,.12)');}
+  if(actions)actions.style.display='none';
+  switch(state){
+    case 'idle': accent(MUT); if(title)title.textContent='Noch kein Upload'; if(sub)sub.textContent='Wähle eine Datei, um zu starten.'; if(pct){pct.style.opacity='.5';pct.textContent='0%';} if(prog)prog.style.width='0%'; if(prevWrap)prevWrap.style.display='none'; setBtn(false); UP.busy=false; break;
+    case 'validating': accent(CYAN); if(title)title.textContent='Datei wird geprüft …'; if(sub)sub.textContent='Einen Moment.'; if(pct){pct.style.opacity='1';pct.textContent='0%';} if(prog)prog.style.width='0%'; setBtn(false); UP.busy=true; break;
+    case 'uploading': accent(CYAN); if(title)title.textContent='Upload läuft …'; if(sub)sub.textContent='Bitte warten.'; if(pct)pct.style.opacity='1'; setBtn(false); UP.busy=true; break;
+    case 'saving': accent(CYAN); if(title)title.textContent='Wird gespeichert …'; if(sub)sub.textContent='Metadaten werden gesichert.'; if(pct){pct.style.opacity='1';pct.textContent='100%';} if(prog)prog.style.width='100%'; setBtn(false); UP.busy=true; break;
+    case 'success': accent(GREEN); if(title)title.textContent='Upload abgeschlossen'; if(sub)sub.textContent=msg||'Datei bereit.'; if(pct){pct.style.opacity='1';pct.textContent='100%';} if(prog)prog.style.width='100%'; if(actions)actions.style.display='flex'; setBtn(true); UP.busy=false; break;
+    case 'error': accent(RED); if(title)title.textContent='Upload fehlgeschlagen'; if(sub)sub.textContent=msg||'Bitte erneut versuchen.'; if(pct){pct.style.opacity='.5';pct.textContent='0%';} if(prog)prog.style.width='0%'; if(prevWrap&&!UP.current)prevWrap.style.display='none'; setBtn(!!UP.current); if(UP.current&&actions)actions.style.display='flex'; UP.busy=false; break;
+  }
+}
+function startUpload(file,isReplace){
+  if(!window.TLUpload){ uploadState('error','Upload ist nicht verfügbar.'); return; }
+  var v=TLUpload.validate(file);
+  if(!v.ok){ uploadState('error',v.error); return; } // ungültig -> kein Storage-/DB-Aufruf
+  var hooks={onState:function(st){uploadState(st);},onProgress:function(p){uploadProgress(p);}};
+  var op=(isReplace&&UP.current)?TLUpload.replaceUpload(file,UP.current,hooks):TLUpload.createUpload(file,hooks);
+  op.then(function(res){
+    if(!res||!res.ok){ uploadState('error',res?res.error:'Die Datei konnte nicht hochgeladen werden.'); return; }
+    UP.current=res.row;
+    try{STORE.uploadId=res.row.id;saveStore();}catch(e){}
+    return TLUpload.signedUrl(res.row.storage_path).then(function(url){
+      showPreview(url); uploadState('success',uploadMeta(res.row));
+    });
+  }).catch(function(e){ console.error('[upload]',e); uploadState('error','Die Datei konnte nicht hochgeladen werden.'); });
+}
+function removeCurrentUpload(){
+  if(!UP.current||UP.busy)return;
+  UP.busy=true; var sub=upEl('up-sub'); if(sub)sub.textContent='Wird entfernt …';
+  TLUpload.removeUpload(UP.current).then(function(res){
+    UP.busy=false;
+    if(res&&res.ok){ UP.current=null; try{delete STORE.uploadId;saveStore();}catch(e){} showPreview(null); uploadState('idle'); tlToast('Upload entfernt.','ok'); }
+    else if(res&&res.partial){ tlToast(res.error,'err'); }
+    else { uploadState('error',(res&&res.error)||'Konnte nicht entfernt werden.'); }
+  });
+}
+function weiterZurAnalyse(){
+  if(!UP.current)return;
+  tlToast('Upload gespeichert. Die KI-Analyse wird im nächsten Schritt verbunden.','ok');
+}
+function uploadResetUI(){ UP.current=null; UP.busy=false; showPreview(null); uploadState('idle'); }
+function uploadCleanup(){ try{var img=upEl('up-preview'); if(img)img.src='';}catch(e){} UP.current=null; UP.busy=false; UP.pendingReplace=false; }
+function uploadBootstrap(){
+  if(!window.TLUpload||!TLUpload.isConfigured()){ uploadResetUI(); return; }
+  TLUpload.loadLatestOpen().then(function(res){
+    if(!res||!res.ok||!res.row){ uploadResetUI(); return; }
+    UP.current=res.row;
+    try{STORE.uploadId=res.row.id;saveStore();}catch(e){}
+    return TLUpload.signedUrl(res.row.storage_path).then(function(url){
+      showPreview(url); uploadState('success',uploadMeta(res.row));
+    });
+  }).catch(function(){ uploadResetUI(); });
 }
 var Trades={all:function(){return STORE.trades.slice();},closed:function(){return STORE.trades.filter(function(t){return t.status==='closed';});},
   add:function(t){t.tradeId=t.tradeId||('t'+Date.now());STORE.trades.push(t);saveStore();return t;}};
@@ -4202,7 +4285,7 @@ function saveAccount(){
    Bis dahin bleibt die App via tl-gate verborgen – so werden niemals
    Daten eines vorherigen Kontos kurz angezeigt. */
 </script>
-<!-- ===== TradeLens Auth-/Data-Guard (Phase 2) – Reihenfolge: config -> supabase -> auth -> data -> init ===== -->
+<!-- ===== TradeLens Auth-/Data-/Upload-Guard (Phase 3) – Reihenfolge: config -> supabase -> auth -> data -> tus -> upload -> init ===== -->
 <script src="tradelens-config.js"></script>
 <script>
   (function(){
@@ -4211,9 +4294,13 @@ function saveAccount(){
     loadScript(cfg.SUPABASE_JS_CDN || 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js', function(){
       loadScript('tradelens-auth.js', function(){
         loadScript('tradelens-data.js', function(){
-          if(window.TLAuth && typeof TLAuth.guardApp==='function'){ TLAuth.guardApp(); }
-          else { document.documentElement.classList.remove('tl-gate'); } /* Fallback: niemals dauerhaft leere Seite */
-          if(typeof tlBootstrap==='function'){ tlBootstrap(); } /* lädt Profil + Settings nach gültiger Session */
+          loadScript(cfg.TUS_JS_CDN || 'https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js', function(){
+            loadScript('tradelens-upload.js', function(){
+              if(window.TLAuth && typeof TLAuth.guardApp==='function'){ TLAuth.guardApp(); }
+              else { document.documentElement.classList.remove('tl-gate'); } /* Fallback: niemals dauerhaft leere Seite */
+              if(typeof tlBootstrap==='function'){ tlBootstrap(); } /* lädt Profil + Settings + letzten Upload nach gültiger Session */
+            });
+          });
         });
       });
     });
