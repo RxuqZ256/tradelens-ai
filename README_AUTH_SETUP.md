@@ -138,3 +138,112 @@ Authentication → URL Configuration als **Redirect URL** (und als **Site URL**
 Betrieb steht `APP_MODE` in `tradelens-config.js` auf `"production"`.
 Alle internen Weiterleitungen nutzen relative Pfade und bleiben damit innerhalb
 des Unterordners `/tradelens-ai/`.
+
+---
+
+# Phase 2 – Profil & Einstellungen (Supabase-Persistenz)
+
+Phase 2 macht das **Profil** und die **Einstellungen** echt: pro Nutzer
+gespeichert in Supabase, mit Row Level Security, sowie einem
+benutzergebundenen lokalen Cache als Offline-Fallback. Fake-Zustände
+(„PRO ACCOUNT“, „BINANCE VERBUNDEN“, „SYNC AKTIV“, „Martin Klein“) wurden
+durch ehrliche, neutrale Zustände ersetzt.
+
+## 1. Was du in Supabase ausführen musst
+
+1. Öffne **Supabase → SQL Editor → New query**.
+2. Falls noch nicht geschehen: zuerst `supabase_setup.sql` (Phase 1).
+3. Danach **`supabase_phase2_user_settings.sql`** einfügen und **Run**.
+
+Das Skript ist **idempotent** und kann gefahrlos erneut ausgeführt werden.
+Es legt die Tabelle `public.user_settings` (1:1 zu `auth.users`) mit
+CHECK-Constraints, RLS und drei Policies (SELECT/INSERT/UPDATE – jeweils nur
+die eigene Zeile, inkl. `with check`) an. **Keine** DELETE-Policy, **kein**
+zusätzlicher Trigger auf `auth.users`, **keine** `notifications`-JSONB-Spalte.
+
+## 2. Skript-Reihenfolge in der App
+
+In `TradeLens_AI_App.html` werden die Skripte in dieser Reihenfolge geladen:
+
+1. `tradelens-config.js`
+2. Supabase-CDN (UMD)
+3. `tradelens-auth.js`
+4. `tradelens-data.js`  ← **neu**
+5. App-Initialisierung über `tlBootstrap()` (erst nach gültiger Session)
+
+## 3. Benutzertrennung
+
+- Lokale Schlüssel sind **benutzergebunden**:
+  `tradelens_store_v2:<user_id>` und `tradelens_profile_v2:<user_id>`.
+- Die alten globalen `…_v1`-Schlüssel werden **nicht** mehr geladen
+  (mögliche Demo-/Testdaten). Sie werden auch nicht gelöscht.
+- Der Store wird **erst nach gültiger Session** und bekannter `user_id`
+  geladen. Beim Start/Logout wird der In-Memory-Zustand zurückgesetzt
+  (`resetInMemory`), damit nie kurz Daten eines anderen Kontos erscheinen.
+- Maßgebliche Quelle ist **Supabase** (RLS stellt sicher: Nutzer A kann
+  ausschließlich seine eigene Zeile lesen/ändern).
+
+## 4. Welche Einstellungen jetzt wirklich synchronisiert werden
+
+In `public.user_settings` gespeichert und appweit angewandt:
+
+- Kontowährung (`account_currency`)
+- Kontogröße (`account_size`)
+- Risiko-Prozent (`risk_percent`)
+- Automatische Lotberechnung (`auto_lot_calculation`)
+- Signaltyp (`signal_type`: scalping/day/swing)
+- CRV / Chance-Risiko-Verhältnis (`rr_target`: 1/2/3)
+- Alle vier Benachrichtigungsschalter
+  (`notify_signal_alerts`, `notify_price_alerts`,
+  `notify_market_news`, `notify_weekly_report`)
+- Erscheinungsbild (`appearance`)
+
+Der **Risiko-Betrag** wird ausschließlich berechnet
+(`account_size * risk_percent / 100`) und **nicht** gespeichert.
+
+Speicherverhalten: Toggles/Segmente werden optimistisch übernommen und sofort
+in den benutzergebundenen Cache geschrieben; anschließend folgt der Upsert nach
+Supabase. Schlägt die Synchronisierung fehl, bleibt der lokale Stand erhalten
+und es erscheint ein **ehrlicher Hinweis** („… Lokal gespeichert.“). Der
+Konto-Dialog bestätigt erst **nach** erfolgreicher Supabase-Antwort. Es werden
+keine technischen Details oder Tokens angezeigt.
+
+Ungültige Werte (z. B. Risiko außerhalb 0,01–10 %, Kontogröße ≤ 0) werden
+**nicht** gespeichert; es erscheint eine deutsche Meldung und der vorherige
+gültige Zustand bleibt erhalten.
+
+## 5. Erscheinungsbild – nur Präferenz
+
+`appearance` wird gespeichert, beim Start wiederhergestellt und die aktive
+Radio-Auswahl korrekt angezeigt. **`cyber_blue` und `quantum_violet` sind in
+dieser Phase ausschließlich gespeicherte Präferenzen** – es existiert noch
+keine vollständige Theme-Engine, die das App-Farbschema umfärbt. Aktuell
+entspricht die Darstellung weiterhin dem Dark-Design.
+
+## 6. Profildaten & neutralisierte Fake-Zustände
+
+- Angezeigter Name = `profiles.display_name`; ist dieser leer, die
+  **E-Mail aus der Session**; fehlt auch diese, „Profil vervollständigen“.
+  Es wird **kein** Name erfunden.
+- „Mitglied seit …“ stammt aus `profiles.created_at`; fehlt das Datum, wird
+  die Zeile ausgeblendet.
+- Account-Badge: „STANDARD ACCOUNT“ statt „PRO“. Es wird kein bezahlter Plan
+  vorgetäuscht (kein Abomodell vorhanden).
+- Watchlist: „NOCH NICHT VERBUNDEN“ statt „SYNC AKTIV“ (keine echte Sync).
+- Broker: „Kein Broker verbunden“ statt „BINANCE VERBUNDEN“ (keine Integration).
+
+## 7. Was NICHT verändert wurde
+
+`tradelens-config.js`, `tradelens-auth.js`, `supabase_setup.sql`, `APP_MODE`
+(weiterhin `production`), Supabase-URL/Publishable-Key, GitHub-Pages-Pfade,
+`TradeLens_AI_Login.html` und `index.html` (der Anzeigename wird dort bereits
+beim Signup als Metadatum übergeben) sowie das bestehende Design.
+
+## Nächste Schritte (nach dem Hochladen)
+
+**Supabase:** `supabase_phase2_user_settings.sql` ausführen. Danach ggf. unter
+Table Editor prüfen, dass `user_settings` mit aktivem RLS existiert.
+
+**GitHub Pages:** die geänderte `TradeLens_AI_App.html` sowie die neue
+`tradelens-data.js` in das Repository hochladen (gleicher Ordner wie die
+übrigen Dateien). `index.html`/`TradeLens_AI_Login.html` bleiben unverändert.
