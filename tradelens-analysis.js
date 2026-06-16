@@ -228,3 +228,12 @@
     hideLoading: hideLoading
   };
 })();
+
+(function () {
+  if (document.querySelector('script[data-tl-analysis-ui]')) return;
+  var script = document.createElement('script');
+  script.src = 'tradelens-analysis-ui.js?v=20260616b';
+  script.async = false;
+  script.setAttribute('data-tl-analysis-ui', 'true');
+  document.head.appendChild(script);
+})();
