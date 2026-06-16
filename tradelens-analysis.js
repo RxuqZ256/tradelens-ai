@@ -1,7 +1,7 @@
 /* =====================================================================
    TradeLens AI – Analyse-Datenschicht (Phase 4)
    ---------------------------------------------------------------------
-   Ruft die Edge Function "smooth-endpoint" auf (der Browser ruft NIE den
+   Ruft die Edge Function "analyze-chart" auf (der Browser ruft NIE den
    Modellanbieter). Sendet nur { upload_id, force_reanalysis,
    confirmed_instrument?, confirmed_timeframe? }. Liest eigene Analysen
    (RLS) zum Wiederherstellen nach Reload. Kein API-Key im Frontend.
@@ -176,7 +176,7 @@
       var body = { upload_id: uploadId, force_reanalysis: opts.force === true };
       if (opts.confirmed_instrument) body.confirmed_instrument = opts.confirmed_instrument;
       if (opts.confirmed_timeframe) body.confirmed_timeframe = opts.confirmed_timeframe;
-      var url = CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/smooth-endpoint";
+      var url = CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/analyze-chart";
       return fetch(url, {
         method: "POST",
         headers: {
