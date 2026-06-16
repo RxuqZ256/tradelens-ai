@@ -367,3 +367,95 @@ Funktion ergänzt.
 Unverändert bleiben: `tradelens-config.js`, `tradelens-auth.js`,
 `tradelens-data.js`, `index.html`, `TradeLens_AI_Login.html`, `APP_MODE`,
 Supabase-Zugangsdaten und die GitHub-Pages-Pfade.
+
+---
+
+# Phase 4 – Adaptive Single-Chart-KI-Analyse (analyze-chart)
+
+Phase 4 ergänzt eine echte ICT-Chartanalyse: Der Nutzer lädt einen Chart hoch
+(Phase 3) und startet die Analyse. Eine **Supabase Edge Function** prüft Nutzer
+und Upload, lädt das private Bild, ruft das KI-Modell mit strikt strukturierter
+JSON-Ausgabe auf, validiert das Ergebnis deterministisch, berechnet Risk/RR
+selbst und speichert alles in `public.ai_analyses`. Der Browser ruft **niemals**
+den Modellanbieter direkt auf und sieht **keinen** API-Key.
+
+## 1. SQL ausführen
+
+Im Supabase SQL-Editor **einmalig** ausführen:
+
+- `supabase_phase4_ai_analyses.sql`
+
+Legt die Tabelle `public.ai_analyses` an (Status-CHECK, denormalisierte
+Felder + `result jsonb`), einen **partiellen Unique-Index** auf
+`(user_id, upload_id, prompt_version)` nur für `queued`/`processing`
+(verhindert doppelte aktive Läufe, erlaubt aber `force_reanalysis`), aktiviert
+**RLS** und vergibt `authenticated` **nur SELECT** auf eigene Zeilen. INSERT/
+UPDATE/DELETE besitzt der Client nicht – das schreibt ausschließlich die Edge
+Function über den Service-Role-Key.
+
+## 2. Edge Function deployen
+
+Ordner: `supabase/functions/analyze-chart/`
+(`index.ts`, `schema.ts`, `prompt.ts`, `provider_openai.ts`, `validation.ts`,
+`risk.ts`, `cors.ts`).
+
+```
+supabase functions deploy analyze-chart
+```
+
+## 3. Supabase Secrets setzen
+
+```
+supabase secrets set OPENAI_API_KEY=sk-...        # Pflicht
+supabase secrets set OPENAI_MODEL=gpt-5.4-mini    # optional (Default: gpt-5.4-mini)
+supabase secrets set AI_DAILY_LIMIT=10            # optional (Default: 10)
+supabase secrets set AI_PROMPT_VERSION=ict-single-chart-v1  # optional
+```
+
+`SUPABASE_URL`, `SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` stellt
+Supabase der Function automatisch bereit – **nicht** ins Repo/Frontend.
+
+## 4. Funktionsweise (Analyse / No-Trade / Bestätigung)
+
+- **Analyse:** Frontend (`tradelens-analysis.js`) ruft `analyze-chart` mit
+  `{ upload_id, force_reanalysis }` und dem User-JWT. Die Function prüft Session
+  (User-Client) und Upload-Eigentum (RLS), erzeugt eine **Signed URL (120 s,
+  nur an das Modell, nie an Browser/DB/Logs)**, lädt die Settings, ruft das
+  Modell (Responses API, `text.format`/JSON-Schema, Bild als `input_image`),
+  **validiert** geometrisch (Long: SL<Entry<TP; Short: TP<Entry<SL; endliche
+  Werte; Entry-Zone sortiert; SL außerhalb der Zone) und berechnet
+  `risk_amount = account_size × risk_percent / 100` sowie
+  `rr = |TP−Entry| / |Entry−SL|`. RR außerhalb `[max(1.8, rr_target), 4.0]`
+  → `no_trade`. Ergebnis landet als validiertes JSON in `ai_analyses`; die App
+  rendert es selbst in der bestehenden dunklen Trade-Card.
+- **No-Trade:** `direction=none`, `entry_type=none`, alle Level `null`, keine
+  Lotgröße, kein Trade-CTA. Angezeigt werden Ablehnungsgründe, erkannte
+  Struktur/Liquidität und eine mögliche Beobachtungszone.
+- **Bestätigung (needs_confirmation):** Ist Instrument/Timeframe unklar
+  (fehlt oder Konfidenz < 50), liefert die KI **keinen** ausführbaren Trade.
+  Die Ergebnis-Seite zeigt erkanntes Instrument/Timeframe + Konfidenz, ein
+  Korrektur-Eingabefeld und „Analyse fortsetzen“. Der zweite Request sendet
+  zusätzlich `confirmed_instrument` / `confirmed_timeframe` (serverseitig
+  getrimmt/normalisiert/längenbegrenzt; Timeframe nur M1/M5/M15/M30/H1/H4/D1/W1)
+  und `force_reanalysis:true`. Risiko, RR, Kontogröße, Stil und Uploadpfad
+  kommen weiterhin ausschließlich aus Supabase.
+- **Kostenschutz:** Ein aktiver Lauf pro Upload+Prompt-Version, gecachte
+  Ergebnisse werden ohne neuen Modellaufruf zurückgegeben, Doppelklick löst
+  keinen zweiten Provider-Call aus, max. 2 Modellaufrufe pro Analyse
+  (Erstversuch + ein Reparaturversuch), Provider-Timeout ~55 s, Tageslimit
+  (Default 10) zählt nur tatsächlich gestartete Provider-Aufrufe.
+- **Lot:** In Phase 4 wird **keine** Lotgröße erfunden →
+  `lot:null`, `lot_status:"instrument_specs_required"` (bzw. `"disabled"` wenn
+  `auto_lot_calculation=false`). Instrument-Specs folgen in Phase 4B.
+
+## 5. Was du auf GitHub hochladen musst
+
+- **Neu:** `tradelens-analysis.js`
+- **Ersetzen:** `TradeLens_AI_App.html`
+
+Die Edge-Function-Dateien und `supabase_phase4_ai_analyses.sql` gehören **nicht**
+auf GitHub Pages, sondern werden in Supabase deployt/ausgeführt.
+
+Unverändert: `tradelens-config.js`, `tradelens-auth.js`, `tradelens-data.js`,
+`tradelens-upload.js`, `index.html`, `TradeLens_AI_Login.html`, `APP_MODE`
+(bleibt `production`), Supabase-Zugangsdaten und die GitHub-Pages-Pfade.
