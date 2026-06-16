@@ -1,7 +1,8 @@
 /* =====================================================================
    TradeLens AI – Analyse-Datenschicht (Phase 4)
    ---------------------------------------------------------------------
-   Ruft die Edge Function "analyze-chart" auf (der Browser ruft NIE den
+   Ruft die deployte Edge Function (CFG.ANALYZE_FUNCTION, Default
+   "smooth-endpoint") auf (der Browser ruft NIE den
    Modellanbieter). Sendet nur { upload_id, force_reanalysis,
    confirmed_instrument?, confirmed_timeframe? }. Liest eigene Analysen
    (RLS) zum Wiederherstellen nach Reload. Kein API-Key im Frontend.
@@ -46,13 +47,32 @@
     rate_limited: "Dein taegliches Analyselimit ist erreicht. Versuche es morgen erneut.",
     model_not_configured: "Die Analyse ist derzeit nicht verfuegbar.",
     storage_error: "Der Chart konnte nicht geladen werden.",
-    provider_error: "Die Analyse konnte nicht durchgefuehrt werden. Bitte erneut versuchen.",
+    provider_error: "Der KI-Dienst hat die Analyse abgelehnt oder war nicht erreichbar. Bitte erneut versuchen.",
     provider_timeout: "Die Analyse hat zu lange gedauert. Bitte erneut versuchen.",
     model_refusal: "Zu diesem Bild konnte keine Analyse erstellt werden.",
     validation_failed: "Das Ergebnis war nicht schluessig. Bitte erneut versuchen.",
+    function_not_deployed: "Die Analyse-Funktion ist nicht erreichbar. Bitte spaeter erneut versuchen.",
+    network_error: "Keine Verbindung zum Analyse-Dienst. Bitte Internetverbindung pruefen.",
     internal_error: "Es ist ein Fehler aufgetreten. Bitte erneut versuchen."
   };
   function message(code) { return MESSAGES[code] || MESSAGES.internal_error; }
+
+  /* Fehlercode aus HTTP-Status ableiten, wenn die Antwort keinen eigenen
+     error_code liefert (z. B. wenn die Function gar nicht erreicht wird). */
+  function inferCode(status, payload) {
+    if (payload && payload.error_code) return payload.error_code;
+    if (status === 404) return "function_not_deployed";
+    if (status === 401 || status === 403) return "unauthorized";
+    if (status === 429) return "rate_limited";
+    if (status === 400) return "invalid_request";
+    return "internal_error";
+  }
+
+  /* Slug der deployten Edge Function (konfigurierbar, Default: smooth-endpoint). */
+  function functionUrl() {
+    var slug = CFG.ANALYZE_FUNCTION || "smooth-endpoint";
+    return CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/" + slug;
+  }
 
   var loading = {
     depth: 0,
@@ -176,8 +196,7 @@
       var body = { upload_id: uploadId, force_reanalysis: opts.force === true };
       if (opts.confirmed_instrument) body.confirmed_instrument = opts.confirmed_instrument;
       if (opts.confirmed_timeframe) body.confirmed_timeframe = opts.confirmed_timeframe;
-      var url = CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/analyze-chart";
-      return fetch(url, {
+      return fetch(functionUrl(), {
         method: "POST",
         headers: {
           "Authorization": "Bearer " + tok,
@@ -189,11 +208,16 @@
         return resp.json().then(function (j) { return j; }, function () { return {}; })
           .then(function (j) {
             if (resp.ok && j && j.ok) {
-              return { ok: true, status: j.status, result: j.result || null, analysis_id: j.analysis_id || null, cached: !!j.cached };
+              return { ok: true, status: j.status, result: j.result || null, analysis_id: j.analysis_id || null, cached: !!j.cached, http_status: resp.status };
             }
-            return { ok: false, error_code: (j && j.error_code) || "internal_error", analysis_id: (j && j.analysis_id) || null };
+            // Server hat geantwortet, aber mit Fehler -> error_code bzw. aus Status ableiten.
+            return { ok: false, error_code: inferCode(resp.status, j), analysis_id: (j && j.analysis_id) || null, http_status: resp.status };
           });
-      }).catch(function () { return { ok: false, error_code: "provider_error" }; });
+      }).catch(function () {
+        // fetch selbst gescheitert (kein HTTP-Status) -> Transport-/Netzwerkfehler,
+        // KEIN provider_error (das ist eine serverseitige Provider-Ablehnung).
+        return { ok: false, error_code: "network_error", http_status: 0 };
+      });
     }).catch(function () {
       return { ok: false, error_code: "internal_error" };
     });
@@ -227,13 +251,4 @@
     showLoading: showLoading,
     hideLoading: hideLoading
   };
-})();
-
-(function () {
-  if (document.querySelector('script[data-tl-analysis-ui]')) return;
-  var script = document.createElement('script');
-  script.src = 'tradelens-analysis-ui.js?v=20260616b';
-  script.async = false;
-  script.setAttribute('data-tl-analysis-ui', 'true');
-  document.head.appendChild(script);
 })();
