@@ -270,6 +270,38 @@
     });
   }
 
+  /* ---------- Upload serverseitig für die Analyse auflösen ------------
+     Liefert ausschliesslich einen ECHTEN, dem angemeldeten Nutzer
+     gehoerenden Datensatz aus analysis_uploads zurueck. Eine lokale oder
+     veraltete ID wird nie als gueltig behandelt.
+       1) Session laden.
+       2) preferredId (falls vorhanden) + user_id pruefen.
+       3) sonst neuesten eigenen Datensatz mit status="uploaded".
+     Rueckgabe: { ok:true, row } | { ok:false, error:"upload_not_found" }
+  -------------------------------------------------------------------- */
+  function resolveUploadForAnalysis(preferredId) {
+    return session().then(function (sess) {
+      var c = client();
+      if (!sess || !sess.user || !c) return { ok: false, error: "upload_not_found" };
+      var uid = sess.user.id;
+      var byId = (preferredId && typeof preferredId === "string")
+        ? c.from("analysis_uploads")
+            .select("id,storage_path,status,mime_type,user_id")
+            .eq("id", preferredId).eq("user_id", uid).maybeSingle()
+            .then(function (r) { return (r && !r.error && r.data) ? r.data : null; })
+            .catch(function () { return null; })
+        : Promise.resolve(null);
+      return byId.then(function (row) {
+        if (row && row.id && row.storage_path) return { ok: true, row: row };
+        // Fallback: neuesten eigenen abgeschlossenen Upload laden.
+        return latestOpen(uid).then(function (r) {
+          if (r.error || !r.data || !r.data.id || !r.data.storage_path) return { ok: false, error: "upload_not_found" };
+          return { ok: true, row: r.data };
+        }).catch(function () { return { ok: false, error: "upload_not_found" }; });
+      });
+    }).catch(function () { return { ok: false, error: "upload_not_found" }; });
+  }
+
   /* ---------- Oeffentliche API --------------------------------------- */
   window.TLUpload = {
     isConfigured: isConfigured,
@@ -279,6 +311,7 @@
     replaceUpload: replaceUpload,
     removeUpload: removeUpload,
     loadLatestOpen: loadLatestOpen,
+    resolveUploadForAnalysis: resolveUploadForAnalysis,
     signedUrl: signedUrl,
     BUCKET: BUCKET,
     MAX_BYTES: MAX_BYTES,
