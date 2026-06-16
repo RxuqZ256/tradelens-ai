@@ -2496,9 +2496,96 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 </div>
 </section>
 <!-- ERGEBNIS -->
+<style id="al-style">
+#page-analysis-loading{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+.al-orb-wrap{position:relative;min-height:238px;display:flex;align-items:center;justify-content:center;margin:2px 0 8px}
+.al-orb{position:relative;width:208px;height:208px}
+.al-orb svg{width:100%;height:100%;display:block;overflow:visible}
+.al-orb .rings{transform-box:fill-box;transform-origin:center;animation:alSpin 9s linear infinite}
+.al-orb .rings2{transform-box:fill-box;transform-origin:center;animation:alSpin 14s linear infinite reverse}
+.al-orb::before{content:"";position:absolute;inset:-16%;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.30),rgba(124,58,237,.13) 55%,transparent 72%);filter:blur(7px);animation:alPulse 2.6s ease-in-out infinite;pointer-events:none}
+.al-chip{position:absolute;z-index:3;font-family:var(--f-disp);font-weight:600;font-size:10.5px;letter-spacing:.2px;color:var(--txt-2);background:rgba(8,15,37,.82);border:1px solid rgba(84,104,206,.42);border-radius:10px;padding:5px 9px;display:flex;align-items:center;gap:5px;max-width:45%;white-space:nowrap;animation:alFloat 5s ease-in-out infinite;transition:color .3s,border-color .3s,box-shadow .3s}
+.al-chip svg{width:12px;height:12px;flex:0 0 auto;color:var(--cyan)}
+.al-chip.on{color:#eaffff;border-color:rgba(0,229,255,.75);box-shadow:0 0 16px rgba(0,229,255,.38)}
+.al-chip.c1{top:3%;left:0;animation-delay:0s}.al-chip.c2{top:34%;left:-2px;animation-delay:.6s}.al-chip.c3{top:65%;left:0;animation-delay:1.2s}.al-chip.c4{top:14%;right:0;animation-delay:.3s}.al-chip.c5{top:50%;right:-2px;animation-delay:.9s}
+.al-prog-label{display:flex;align-items:baseline;justify-content:center;gap:8px;font-family:var(--f-disp);margin-top:2px}
+.al-prog-label b{font-weight:800;font-size:15px;letter-spacing:1px;color:#dff7ff}
+.al-prog-label span{font-weight:800;font-size:20px;color:var(--cyan)}
+#page-analysis-loading .progress{height:8px;margin:9px 2px 0}
+.al-status{margin-top:14px;display:flex;flex-direction:column}
+.al-st{display:flex;align-items:center;gap:10px;padding:9px 4px}
+.al-st+.al-st{border-top:1px solid rgba(84,104,206,.14)}
+.al-st .ico{width:21px;height:21px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;border:1.6px solid #2a3a63;color:#46557e;transition:.3s}
+.al-st .ico svg{width:12px;height:12px}
+.al-st .nm{flex:1;font-family:var(--f-body);font-weight:600;font-size:13.5px;color:var(--txt-2)}
+.al-st .stt{font-family:var(--f-disp);font-weight:600;font-size:11px;letter-spacing:.3px;color:#46557e}
+.al-st.doing .ico{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.45);animation:alPulse 1.4s ease-in-out infinite}
+.al-st.doing .nm{color:#dff7ff}.al-st.doing .stt{color:var(--cyan)}
+.al-st.done .ico{border-color:var(--green);color:#03110c;background:var(--green);box-shadow:0 0 10px rgba(0,255,156,.4)}
+.al-st.done .stt{color:var(--green)}
+.al-info{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.al-info .in{padding:11px 13px}
+.al-info .k{display:flex;align-items:center;gap:6px;font-family:var(--f-body);font-weight:600;font-size:11px;color:var(--txt-2)}
+.al-info .k svg{width:13px;height:13px;color:var(--cyan);flex:0 0 auto}
+.al-info .v{font-family:var(--f-num);font-weight:800;font-size:18px;color:#eaffff;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-info .s{font-family:var(--f-body);font-size:10px;color:var(--txt-3);margin-top:1px}
+.al-foot{margin-top:14px}
+.al-foot .in{display:flex;align-items:center;gap:11px;padding:13px 14px}
+.al-foot .mini{width:34px;height:34px;flex:0 0 auto}
+.al-foot .t{flex:1;font-family:var(--f-body);font-weight:600;font-size:12.5px;color:#cfe9ff}
+.al-foot .dots{display:flex;gap:4px;flex:0 0 auto}
+.al-foot .dots i{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:alDot 1.2s ease-in-out infinite}
+.al-foot .dots i:nth-child(2){animation-delay:.16s;background:#6d8cff}.al-foot .dots i:nth-child(3){animation-delay:.32s;background:var(--violet)}
+#al-error{display:none;margin-top:16px}
+#al-error .in{padding:22px 16px}
+#al-error .al-emsg{font-family:var(--f-body);font-weight:600;font-size:13.5px;color:#fecdd3;margin-top:6px}
+@keyframes alSpin{to{transform:rotate(360deg)}}
+@keyframes alPulse{0%,100%{opacity:.62;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+@keyframes alFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes alDot{0%,70%,100%{transform:translateY(0);opacity:.4}35%{transform:translateY(-5px);opacity:1}}
+@media(prefers-reduced-motion:reduce){.al-orb .rings,.al-orb .rings2,.al-orb::before,.al-st.doing .ico,.al-chip,.al-foot .dots i{animation-duration:6s;animation-iteration-count:1}}
+body:has(#page-analysis-loading.active) .bottomnav,
+body:has(#page-analysis-loading.active) .home-ind{display:none!important}
+</style>
+<section class="page" id="page-analysis-loading">
+<div class="appbar">
+<div class="icon-btn back" onclick="alCancel()"><svg fill="none" height="20" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24" width="20"><path d="M15 18l-6-6 6-6"></path></svg></div>
+<div class="title-center"><h1>KI ANALYSE LÄUFT</h1><p>Dein Chart wird jetzt ausgewertet</p></div>
+<div class="icon-btn hex"><svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg></div>
+</div>
+<div class="steps">
+<div class="step done" id="al-step1"><div class="dot">✓</div><div class="nm">Upload</div></div>
+<div class="step active" id="al-step2"><div class="dot">2</div><div class="nm">Analyse</div></div>
+<div class="step" id="al-step3"><div class="dot">3</div><div class="nm">Ergebnis</div></div>
+</div>
+<div id="al-main">
+<div class="al-orb-wrap">
+<span class="al-chip c1"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="9" width="4" x="3" y="11"></rect><rect height="15" width="4" x="10" y="5"></rect><rect height="12" width="4" x="17" y="8"></rect></svg>Marktstruktur erkannt</span>
+<span class="al-chip c2"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M3 17l6-6 4 4 7-7"></path><path d="M14 7h6v6"></path></svg>Trend geprüft</span>
+<span class="al-chip c3"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M3 12h3l2 6 4-14 2 8h5"></path></svg>Volatilität analysiert</span>
+<span class="al-chip c4"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"></path></svg>SL / TP berechnet</span>
+<span class="al-chip c5"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle></svg>CRV optimiert</span>
+<div class="al-orb" id="al-orb"></div>
+</div>
+<div class="al-prog-label"><b>Analyse</b><span id="al-pct">0%</span></div>
+<div class="progress"><span id="al-bar" style="width:0%"></span></div>
+<div class="al-status" id="al-status"></div>
+<div class="al-info">
+<div class="gf"><div class="in"><div class="k"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="13" rx="2" width="20" x="2" y="6"></rect><path d="M16 12h2"></path></svg>Kontogröße</div><div class="v" id="al-acc">—</div><div class="s">Für die Lotgrößenberechnung</div></div></div>
+<div class="gf"><div class="in"><div class="k"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"></path></svg>Risiko pro Trade</div><div class="v" id="al-risk">—</div><div class="s">Für die Risikoberechnung</div></div></div>
+</div>
+<div class="gf al-foot"><div class="in"><div class="mini" id="al-mini"></div><div class="t">Bitte warte einen Moment … die KI erstellt dein Setup</div><div class="dots"><i></i><i></i><i></i></div></div></div>
+</div>
+<div class="gf" id="al-error"><div class="in">
+<div class="label" style="color:#FF4D6D">Analyse fehlgeschlagen</div>
+<p class="al-emsg">Bitte erneut versuchen.</p>
+<button class="btn-primary mt" onclick="analysisRetry()"><span class="sp">ERNEUT VERSUCHEN</span></button>
+<button class="btn-ghost mt-s" onclick="alCancel()">Zurück zum Upload</button>
+</div></div>
+</section>
 <section class="page" id="page-ergebnis">
 <div class="appbar">
-<div class="logo-hex"><svg fill="none" height="17" viewbox="0 0 17 17" width="17"><circle cx="8.5" cy="8.5" r="5.6" stroke="#00E5FF" stroke-width="1.4"></circle><circle cx="8.5" cy="8.5" fill="#00E5FF" r="2.4"></circle></svg></div>
+<div class="icon-btn back" onclick="navPage('analyse')"><svg fill="none" height="20" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24" width="20"><path d="M15 18l-6-6 6-6"></path></svg></div>
 <div class="brand sm">TRADELENS <b>AI</b></div>
 <div class="title-center"><h1>ERGEBNIS</h1><p></p></div>
 <div class="icon-btn bell"><svg fill="none" height="20" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></div>
@@ -2848,7 +2935,6 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 <a class="nav on" data-pg="overview" href="#page-overview" onclick="go('overview')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"></path></svg></span><span class="nt">Übersicht</span></a>
 <a class="nav" data-pg="analyse" href="#page-analyse" onclick="go('analyse')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><rect height="9" width="4" x="3" y="11"></rect><rect height="15" width="4" x="10" y="5"></rect><rect height="12" width="4" x="17" y="8"></rect></svg></span><span class="nt">Analyse</span></a>
 <a class="nav" data-pg="journal" href="#page-journal" onclick="go('journal')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM18 6h2v14"></path></svg></span><span class="nt">Journal</span></a>
-<a class="nav" data-pg="ergebnis" href="#page-ergebnis" onclick="go('ergebnis')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg></span><span class="nt">Ergebnis</span></a>
 <a class="nav" data-pg="lernen" href="#page-lernen" onclick="go('lernen')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M12 4L2 9l10 5 10-5-10-5z"></path><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"></path><path d="M22 9v5"></path></svg></span><span class="nt">Lernen</span></a>
 <a class="nav" data-pg="profil" href="#page-profil" onclick="go('profil')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 12 0v1"></path></svg></span><span class="nt">Profil</span></a>
 <div class="home-ind"></div>
@@ -3312,7 +3398,14 @@ function uploadBootstrap(){
   }).catch(function(){ uploadResetUI(); });
 }
 /* ===================== Phase 4: KI-Analyse-UI (rendert validiertes JSON) ===================== */
-var AN={uploadId:null,storagePath:null,payload:null,status:null,busy:false};
+var AN={uploadId:null,storagePath:null,payload:null,status:null,busy:false,cancelled:false,opts:null};
+/* Programmatischer Seitenwechsel: entfernt einen evtl. stehenden URL-Hash,
+   damit die per .active gesteuerte Seite zuverlässig sichtbar ist (das
+   :target-Fallback würde sonst die aktive Seite verdecken). */
+function navPage(pg){
+  if(location.hash){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){location.hash='';}}
+  go(pg);
+}
 var TF_OPTS=['M1','M5','M15','M30','H1','H4','D1','W1'];
 function anEl(){return document.getElementById('an-root');}
 function anEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -3442,17 +3535,106 @@ function confirmAnalysis(){if(AN.busy)return;var i=document.getElementById('an-c
   if(!instr&&!tf){tlToast('Bitte Instrument oder Timeframe angeben.','err');return;}
   analysisRun(AN.uploadId,{force:true,confirmed_instrument:instr||undefined,confirmed_timeframe:tf||undefined});}
 
+/* ===================== Vollbild-Ladebildschirm (page-analysis-loading) ===================== */
+var AL_CHIPS=['c1','c2','c3','c4','c5'];
+var AL_STATUS=['Chart geladen','Analyse wird vorbereitet','Marktstruktur und Trend werden geprüft',
+  'Entry, SL und TP werden berechnet','Lotgröße wird kalkuliert','Ergebnis wird vorbereitet'];
+var LOAD={raf:null,prog:0,cap:93,running:false,done:false,statusIdx:1,chipIdx:0,statusTimer:null,chipTimer:null};
+var AL_CHECK='<svg fill="none" stroke="currentColor" stroke-width="3" viewbox="0 0 24 24"><path d="M5 12l4 4 10-11"></path></svg>';
+var AL_DOT='<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle></svg>';
+function alBuildStatus(){
+  var h='';for(var i=0;i<AL_STATUS.length;i++){h+='<div class="al-st" id="al-st-'+i+'"><span class="ico"></span><span class="nm">'+AL_STATUS[i]+'</span><span class="stt">Ausstehend</span></div>';}
+  var el=document.getElementById('al-status');if(el)el.innerHTML=h;
+}
+function alSetStatus(i,state){
+  var el=document.getElementById('al-st-'+i);if(!el)return;
+  el.className='al-st'+(state==='done'?' done':(state==='doing'?' doing':''));
+  var ic=el.querySelector('.ico'),st=el.querySelector('.stt');
+  if(state==='done'){ic.innerHTML=AL_CHECK;st.textContent='Abgeschlossen';}
+  else if(state==='doing'){ic.innerHTML=AL_DOT;st.textContent='In Bearbeitung';}
+  else{ic.innerHTML='';st.textContent='Ausstehend';}
+}
+function alAccountInfo(){
+  var s=STORE.settings||{},cur=s.currency||'EUR';
+  var acc=document.getElementById('al-acc'),rk=document.getElementById('al-risk');
+  if(acc)acc.textContent=(s.accountSize!=null)?fmtMoney(s.accountSize,cur):'Nicht gesetzt';
+  if(rk)rk.textContent=(s.riskPercent!=null)?fmtPct(s.riskPercent):'Nicht gesetzt';
+}
+function alSetProgress(v){
+  var p=Math.max(0,Math.min(100,v));
+  var bar=document.getElementById('al-bar'),pct=document.getElementById('al-pct');
+  if(bar)bar.style.width=p+'%';if(pct)pct.textContent=Math.round(p)+'%';
+}
+function alStep(n,cls){var e=document.getElementById('al-step'+n);if(e)e.className='step'+(cls?' '+cls:'');}
+function alClearTimers(){
+  if(LOAD.raf){cancelAnimationFrame(LOAD.raf);LOAD.raf=null;}
+  if(LOAD.statusTimer){clearInterval(LOAD.statusTimer);LOAD.statusTimer=null;}
+  if(LOAD.chipTimer){clearInterval(LOAD.chipTimer);LOAD.chipTimer=null;}
+}
+function alStop(){LOAD.running=false;alClearTimers();}
+function alStart(){
+  alStop();
+  var orb=document.getElementById('al-orb');if(orb&&!orb.firstChild)orb.innerHTML=orbSVG(208);
+  var mini=document.getElementById('al-mini');if(mini&&!mini.firstChild)mini.innerHTML=orbSVG(34);
+  var err=document.getElementById('al-error');if(err)err.style.display='none';
+  var main=document.getElementById('al-main');if(main)main.style.display='';
+  alStep(1,'done');alStep(2,'active');alStep(3,'');
+  alBuildStatus();alSetStatus(0,'done');alSetStatus(1,'doing');
+  alAccountInfo();
+  AL_CHIPS.forEach(function(c){var e=document.querySelector('.al-chip.'+c);if(e)e.classList.remove('on');});
+  var c0=document.querySelector('.al-chip.c1');if(c0)c0.classList.add('on');
+  LOAD.prog=0;LOAD.cap=93;LOAD.running=true;LOAD.done=false;LOAD.statusIdx=1;LOAD.chipIdx=0;
+  alSetProgress(0);
+  LOAD.raf=requestAnimationFrame(alTick);
+  LOAD.statusTimer=setInterval(alAdvanceStatus,1500);
+  LOAD.chipTimer=setInterval(alAdvanceChip,1000);
+}
+function alTick(){
+  if(!LOAD.running||LOAD.done)return;
+  if(LOAD.prog<LOAD.cap){LOAD.prog=Math.min(LOAD.cap,LOAD.prog+Math.max(0.08,(LOAD.cap-LOAD.prog)*0.018));alSetProgress(LOAD.prog);}
+  LOAD.raf=requestAnimationFrame(alTick);
+}
+function alAdvanceStatus(){
+  if(LOAD.statusIdx<AL_STATUS.length-1){alSetStatus(LOAD.statusIdx,'done');LOAD.statusIdx++;alSetStatus(LOAD.statusIdx,'doing');}
+}
+function alAdvanceChip(){
+  var e=document.querySelector('.al-chip.'+AL_CHIPS[LOAD.chipIdx]);if(e)e.classList.add('on');
+  LOAD.chipIdx=(LOAD.chipIdx+1)%AL_CHIPS.length;
+}
+function alFinish(cb){
+  LOAD.done=true;alClearTimers();
+  for(var i=0;i<AL_STATUS.length;i++)alSetStatus(i,'done');
+  AL_CHIPS.forEach(function(c){var e=document.querySelector('.al-chip.'+c);if(e)e.classList.add('on');});
+  alStep(3,'active');
+  var step=function(){
+    LOAD.prog=Math.min(100,LOAD.prog+Math.max(1.2,(100-LOAD.prog)*0.25));
+    alSetProgress(LOAD.prog);
+    if(LOAD.prog<99.6){requestAnimationFrame(step);}
+    else{alSetProgress(100);setTimeout(function(){LOAD.running=false;if(typeof cb==='function')cb();},500);}
+  };
+  step();
+}
+function alError(msg){
+  alStop();
+  var main=document.getElementById('al-main');if(main)main.style.display='none';
+  var err=document.getElementById('al-error');
+  if(err){err.style.display='block';var m=err.querySelector('.al-emsg');if(m)m.textContent=msg||'Bitte erneut versuchen.';}
+}
+function alCancel(){AN.cancelled=true;AN.busy=false;alStop();navPage('analyse');}
+
 function analysisRun(uploadId,opts){
   if(!window.TLAnalysis){tlToast('Analyse ist nicht verfügbar.','err');return;}
-  AN.busy=true;AN.uploadId=uploadId;
+  if(AN.busy)return;                                  // Doppelaufruf-Schutz
+  AN.busy=true;AN.cancelled=false;AN.uploadId=uploadId;AN.opts=opts||{};
   if(UP.current&&UP.current.id===uploadId)AN.storagePath=UP.current.storage_path;
-  go('ergebnis');analysisLoading();
+  navPage('analysis-loading');alStart();              // Vollbild-Ladebildschirm
   TLAnalysis.analyze(uploadId,opts||{}).then(function(res){
     AN.busy=false;
-    if(!res||!res.ok){ analysisError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
+    if(AN.cancelled)return;                            // Nutzer hat abgebrochen -> Ergebnis verwerfen
+    if(!res||!res.ok){ alError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
     AN.payload=res.result;AN.status=res.status;
-    renderByStatus(res.status,res.result);
-  }).catch(function(e){ AN.busy=false; console.error('[analysis]',e); analysisError('Die Analyse konnte nicht durchgeführt werden.'); });
+    alFinish(function(){ if(AN.cancelled)return; navPage('ergebnis'); renderByStatus(res.status,res.result); });
+  }).catch(function(e){ AN.busy=false; if(AN.cancelled)return; console.error('[analysis]',e); alError('Die Analyse konnte nicht durchgeführt werden.'); });
 }
 function analysisRestore(uploadRow){
   if(!window.TLAnalysis||!uploadRow)return;
