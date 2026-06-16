@@ -9,94 +9,54 @@
     var s = document.createElement("style");
     s.id = "tl-analysis-ui-style";
     s.textContent =
-      ".tl-setting-row{display:flex!important;align-items:center!important;gap:12px!important}"+
-      ".tl-inline-control{margin-left:auto;flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end;min-width:150px;height:54px;padding:0 14px;border:1px solid rgba(0,229,255,.38);border-radius:15px;background:rgba(2,9,25,.78);box-shadow:inset 0 0 18px rgba(0,229,255,.035)}"+
-      ".tl-inline-control:focus-within{border-color:#00dff4;box-shadow:0 0 0 3px rgba(0,223,244,.09),inset 0 0 18px rgba(0,229,255,.05)}"+
-      ".tl-inline-control input{width:112px;min-width:0;border:0;outline:0;background:transparent;color:#fff;text-align:right;font:700 17px Saira,system-ui,sans-serif;-webkit-appearance:none;appearance:none}"+
-      ".tl-inline-control b{margin-left:6px;color:#7dd3fc;font:800 14px Rajdhani,Saira,sans-serif}"+
-      ".tl-inline-output{margin-left:auto;min-width:150px;text-align:right;color:#7c8cff;font:800 18px Saira,system-ui,sans-serif}"+
-      ".tl-inline-switch{margin-left:auto;position:relative;width:76px;height:42px;flex:0 0 76px}"+
-      ".tl-inline-switch input{position:absolute;opacity:0;width:1px;height:1px}"+
-      ".tl-inline-switch span{position:absolute;inset:0;border-radius:999px;background:#27334d;border:1px solid rgba(148,163,184,.25);box-shadow:inset 0 2px 8px rgba(0,0,0,.35);transition:.2s}"+
-      ".tl-inline-switch span:after{content:'';position:absolute;width:32px;height:32px;left:4px;top:4px;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.35);transition:.2s}"+
-      ".tl-inline-switch input:checked+span{background:linear-gradient(90deg,#08bce7,#337bff);box-shadow:0 0 22px rgba(0,199,255,.4)}"+
-      ".tl-inline-switch input:checked+span:after{transform:translateX(34px)}"+
-      ".tl-settings-state{margin:10px 4px 0;text-align:right;color:#75849d;font:700 11px Rajdhani,Saira,sans-serif}"+
-      ".tl-settings-state.ok{color:#42e8a4}.tl-settings-state.err{color:#fda4af}"+
-      ".tl-analysis-error{position:fixed;left:16px;right:16px;bottom:94px;z-index:100000;max-width:520px;margin:auto;padding:15px 44px 15px 16px;border-radius:16px;border:1px solid rgba(248,113,113,.55);background:linear-gradient(145deg,rgba(55,13,27,.98),rgba(12,8,22,.98));box-shadow:0 16px 50px rgba(0,0,0,.46);color:#fff;transform:translateY(24px);opacity:0;pointer-events:none;transition:.22s ease}"+
-      ".tl-analysis-error.on{transform:translateY(0);opacity:1;pointer-events:auto}"+
-      ".tl-analysis-error strong{display:block;margin-bottom:5px;color:#fecdd3;font:800 14px Saira,sans-serif}"+
-      ".tl-analysis-error p{margin:0;color:#e2e8f0;font:600 13px/1.45 Rajdhani,Saira,sans-serif}"+
-      ".tl-analysis-error small{display:block;margin-top:7px;color:#94a3b8;font:500 11px Rajdhani,Saira,sans-serif}"+
-      ".tl-analysis-error button{position:absolute;right:10px;top:9px;width:30px;height:30px;border:0;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:18px}"+
-      "@media(max-width:390px){.tl-inline-control,.tl-inline-output{min-width:132px}.tl-inline-control input{width:91px}}";
+      ".tl-native-input{width:100%;border:0!important;outline:0!important;background:transparent!important;color:inherit!important;font:inherit!important;text-align:inherit!important;padding:0!important;margin:0!important;-webkit-appearance:none;appearance:none}"+
+      ".tl-settings-state{margin:10px 4px 0;text-align:right;color:#75849d;font:700 11px Rajdhani,Saira,sans-serif}.tl-settings-state.ok{color:#42e8a4}.tl-settings-state.err{color:#fda4af}"+
+      ".tl-analysis-error{position:fixed;left:16px;right:16px;bottom:94px;z-index:100000;max-width:520px;margin:auto;padding:15px 44px 15px 16px;border-radius:16px;border:1px solid rgba(248,113,113,.55);background:linear-gradient(145deg,rgba(55,13,27,.98),rgba(12,8,22,.98));box-shadow:0 16px 50px rgba(0,0,0,.46);color:#fff;transform:translateY(24px);opacity:0;pointer-events:none;transition:.22s ease}.tl-analysis-error.on{transform:translateY(0);opacity:1;pointer-events:auto}.tl-analysis-error strong{display:block;margin-bottom:5px;color:#fecdd3;font:800 14px Saira,sans-serif}.tl-analysis-error p{margin:0;color:#e2e8f0;font:600 13px/1.45 Rajdhani,Saira,sans-serif}.tl-analysis-error small{display:block;margin-top:7px;color:#94a3b8;font:500 11px Rajdhani,Saira,sans-serif}.tl-analysis-error button{position:absolute;right:10px;top:9px;width:30px;height:30px;border:0;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:18px}";
     document.head.appendChild(s);
   }
 
-  function normalize(value) {
-    return String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
+  function normalize(v) {
+    return String(v || "").replace(/\s+/g, " ").trim().toLowerCase();
   }
 
   function exactText(root, text) {
     var wanted = normalize(text);
     var nodes = root.querySelectorAll("*");
     for (var i = 0; i < nodes.length; i++) {
-      if (normalize(nodes[i].textContent) === wanted) return nodes[i];
+      if (nodes[i].children.length === 0 && normalize(nodes[i].textContent) === wanted) return nodes[i];
     }
     return null;
   }
 
-  function findSettingsCard(page) {
+  function findRow(page, labelText) {
+    var label = exactText(page, labelText);
+    if (!label) return null;
     var labels = ["kontogröße", "risiko pro trade", "risiko-betrag", "lotgröße automatisch berechnen"];
-    var first = exactText(page, "Kontogröße");
-    if (!first) return null;
-    var node = first.parentElement;
+    var node = label.parentElement;
     while (node && node !== page) {
       var text = normalize(node.textContent);
-      var all = true;
+      var others = 0;
       for (var i = 0; i < labels.length; i++) {
-        if (text.indexOf(labels[i]) < 0) { all = false; break; }
+        if (labels[i] !== normalize(labelText) && text.indexOf(labels[i]) >= 0) others++;
       }
-      if (all) return node;
+      if (others === 0) return node;
       node = node.parentElement;
     }
     return null;
   }
 
-  function findRow(card, labelText) {
-    var labels = ["kontogröße", "risiko pro trade", "risiko-betrag", "lotgröße automatisch berechnen"];
-    var label = exactText(card, labelText);
-    if (!label) return null;
-    var node = label.parentElement;
-    var candidate = node;
-    while (node && node.parentElement && node.parentElement !== card) {
-      var parentText = normalize(node.parentElement.textContent);
-      var containsOther = false;
-      for (var i = 0; i < labels.length; i++) {
-        if (labels[i] !== normalize(labelText) && parentText.indexOf(labels[i]) >= 0) {
-          containsOther = true;
-          break;
-        }
-      }
-      if (containsOther) break;
-      node = node.parentElement;
-      candidate = node;
-    }
-    return candidate;
-  }
-
-  function hideOldValue(row, kind) {
-    var nodes = row.querySelectorAll("*");
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
-      if (el.children.length) continue;
+  function findValueLeaf(row, labelText) {
+    var label = exactText(row, labelText);
+    var leaves = row.querySelectorAll("*");
+    for (var i = leaves.length - 1; i >= 0; i--) {
+      var el = leaves[i];
+      if (el === label || el.children.length) continue;
       var t = normalize(el.textContent);
-      var match = false;
-      if (kind === "account") match = t === "nicht gesetzt" || /^[-+]?\d[\d., ]*(€|eur|\$|usd|£|gbp|chf)?$/i.test(t);
-      if (kind === "risk") match = /%$/.test(t) && t.indexOf("risiko") < 0;
-      if (kind === "amount") match = t === "—" || t === "-" || /^[-+]?\d[\d., ]*(€|eur|\$|usd|£|gbp|chf)$/i.test(t);
-      if (match) el.style.display = "none";
+      if (!t) continue;
+      if (t === normalize(labelText)) continue;
+      if (t === "nicht gesetzt" || t === "—" || t === "-" || /%$/.test(t) || /[€$£]|\beur\b|\busd\b|\bgbp\b|\bchf\b/i.test(t)) return el;
     }
+    return null;
   }
 
   function createClient() {
@@ -116,75 +76,67 @@
     }
   }
 
-  function currencySymbol(code) {
-    if (code === "USD") return "$";
-    if (code === "GBP") return "£";
-    if (code === "CHF") return "CHF";
-    return "€";
-  }
-
   function enhanceSettings() {
     addStyles();
     var duplicate = document.getElementById("tl-risk-settings");
     if (duplicate) duplicate.remove();
 
     var page = document.getElementById("page-analyse");
-    if (!page) return;
-    var card = findSettingsCard(page);
-    if (!card || card.getAttribute("data-tl-editable") === "true") return;
-    card.setAttribute("data-tl-editable", "true");
+    if (!page || page.getAttribute("data-tl-settings-ready") === "true") return;
 
-    var accountRow = findRow(card, "Kontogröße");
-    var riskRow = findRow(card, "Risiko pro Trade");
-    var amountRow = findRow(card, "Risiko-Betrag");
-    var lotRow = findRow(card, "Lotgröße automatisch berechnen");
+    var accountRow = findRow(page, "Kontogröße");
+    var riskRow = findRow(page, "Risiko pro Trade");
+    var amountRow = findRow(page, "Risiko-Betrag");
+    var lotRow = findRow(page, "Lotgröße automatisch berechnen");
     if (!accountRow || !riskRow || !amountRow || !lotRow) return;
 
-    accountRow.classList.add("tl-setting-row");
-    riskRow.classList.add("tl-setting-row");
-    amountRow.classList.add("tl-setting-row");
-    lotRow.classList.add("tl-setting-row");
-    hideOldValue(accountRow, "account");
-    hideOldValue(riskRow, "risk");
-    hideOldValue(amountRow, "amount");
+    var accountLeaf = findValueLeaf(accountRow, "Kontogröße");
+    var riskLeaf = findValueLeaf(riskRow, "Risiko pro Trade");
+    var amountLeaf = findValueLeaf(amountRow, "Risiko-Betrag");
+    if (!accountLeaf || !riskLeaf || !amountLeaf) return;
 
-    var accountControl = document.createElement("div");
-    accountControl.className = "tl-inline-control";
-    accountControl.innerHTML = '<input id="tl-account-size" type="number" min="1" step="100" inputmode="decimal" placeholder="Nicht gesetzt"><b id="tl-account-currency">€</b>';
-    accountRow.appendChild(accountControl);
+    page.setAttribute("data-tl-settings-ready", "true");
 
-    var riskControl = document.createElement("div");
-    riskControl.className = "tl-inline-control";
-    riskControl.innerHTML = '<input id="tl-risk-percent" type="number" min="0.1" max="10" step="0.1" inputmode="decimal" value="1"><b>%</b>';
-    riskRow.appendChild(riskControl);
+    var accountInput = document.createElement("input");
+    accountInput.id = "tl-account-size";
+    accountInput.className = "tl-native-input";
+    accountInput.type = "number";
+    accountInput.min = "1";
+    accountInput.step = "100";
+    accountInput.inputMode = "decimal";
+    accountInput.placeholder = "Nicht gesetzt";
+    accountLeaf.textContent = "";
+    accountLeaf.appendChild(accountInput);
 
-    var amountOutput = document.createElement("div");
-    amountOutput.id = "tl-risk-amount";
-    amountOutput.className = "tl-inline-output";
-    amountOutput.textContent = "—";
-    amountRow.appendChild(amountOutput);
+    var riskInput = document.createElement("input");
+    riskInput.id = "tl-risk-percent";
+    riskInput.className = "tl-native-input";
+    riskInput.type = "number";
+    riskInput.min = "0.1";
+    riskInput.max = "10";
+    riskInput.step = "0.1";
+    riskInput.inputMode = "decimal";
+    riskInput.placeholder = "1";
+    riskLeaf.textContent = "";
+    riskLeaf.appendChild(riskInput);
 
-    var oldSwitches = lotRow.querySelectorAll('input[type="checkbox"],[role="switch"],[class*="toggle"],[class*="switch"]');
-    for (var k = 0; k < oldSwitches.length; k++) oldSwitches[k].style.display = "none";
-    var lotSwitch = document.createElement("label");
-    lotSwitch.className = "tl-inline-switch";
-    lotSwitch.innerHTML = '<input id="tl-auto-lot" type="checkbox" checked><span></span>';
-    lotRow.appendChild(lotSwitch);
+    amountLeaf.id = "tl-risk-amount";
+    amountLeaf.textContent = "—";
 
     var state = document.createElement("div");
     state.id = "tl-settings-state";
     state.className = "tl-settings-state";
     state.textContent = "Einstellungen werden geladen …";
-    card.appendChild(state);
+    var settingsCard = accountRow.parentElement;
+    while (settingsCard && settingsCard !== page && normalize(settingsCard.textContent).indexOf("lotgröße automatisch berechnen") < 0) settingsCard = settingsCard.parentElement;
+    (settingsCard && settingsCard !== page ? settingsCard : amountRow.parentElement).appendChild(state);
 
-    var account = document.getElementById("tl-account-size");
-    var risk = document.getElementById("tl-risk-percent");
-    var amount = document.getElementById("tl-risk-amount");
-    var autoLot = document.getElementById("tl-auto-lot");
-    var symbol = document.getElementById("tl-account-currency");
     var uid = null;
     var currency = "EUR";
     var saveTimer = null;
+    var autoLot = true;
+    var realToggle = lotRow.querySelector('input[type="checkbox"]');
+    if (!realToggle) realToggle = lotRow.querySelector('[role="switch"]');
 
     function setState(text, type) {
       state.textContent = text;
@@ -192,69 +144,62 @@
     }
 
     function updateAmount() {
-      var a = Number(account.value);
-      var r = Number(risk.value);
-      amount.textContent = a > 0 && r > 0 ? money(a * r / 100, currency) : "—";
+      var a = Number(accountInput.value);
+      var r = Number(riskInput.value);
+      amountLeaf.textContent = a > 0 && r > 0 ? money(a * r / 100, currency) : "—";
+    }
+
+    function readToggle() {
+      if (!realToggle) return autoLot;
+      if (realToggle.matches('input[type="checkbox"]')) return !!realToggle.checked;
+      var aria = realToggle.getAttribute("aria-checked");
+      return aria == null ? autoLot : aria === "true";
     }
 
     function saveNow() {
       if (!uid || !window.TLData) return;
-      var a = Number(account.value);
-      var r = Number(risk.value);
-      if (!isFinite(a) || a <= 0) {
-        setState("Kontogröße eingeben", "err");
-        return;
-      }
-      if (!isFinite(r) || r < 0.1 || r > 10) {
-        setState("Risiko muss zwischen 0,1 und 10 % liegen", "err");
-        return;
-      }
+      var a = Number(accountInput.value);
+      var r = Number(riskInput.value);
+      if (!isFinite(a) || a <= 0) { setState("Kontogröße eingeben", "err"); return; }
+      if (!isFinite(r) || r < 0.1 || r > 10) { setState("Risiko: 0,1–10 %", "err"); return; }
       setState("Wird gespeichert …", "");
       window.TLData.saveSettings(uid, {
         account_size: a,
         risk_percent: r,
-        auto_lot_calculation: !!autoLot.checked
+        auto_lot_calculation: readToggle()
       }).then(function (res) {
-        if (res && res.ok) setState("Automatisch gespeichert ✓", "ok");
-        else setState("Speichern fehlgeschlagen", "err");
+        setState(res && res.ok ? "Automatisch gespeichert ✓" : "Speichern fehlgeschlagen", res && res.ok ? "ok" : "err");
       }).catch(function () { setState("Speichern fehlgeschlagen", "err"); });
     }
 
     function scheduleSave() {
       updateAmount();
       clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveNow, 550);
+      saveTimer = setTimeout(saveNow, 600);
     }
 
-    account.addEventListener("input", scheduleSave);
-    risk.addEventListener("input", scheduleSave);
-    autoLot.addEventListener("change", scheduleSave);
+    accountInput.addEventListener("input", scheduleSave);
+    riskInput.addEventListener("input", scheduleSave);
+    lotRow.addEventListener("click", function () {
+      setTimeout(function () { autoLot = readToggle(); scheduleSave(); }, 50);
+    });
 
-    if (!window.TLData) {
-      setState("Einstellungen nicht verfügbar", "err");
-      return;
-    }
-
+    if (!window.TLData) { setState("Einstellungen nicht verfügbar", "err"); return; }
     window.TLData.currentUser().then(function (user) {
-      if (!user) {
-        setState("Bitte neu anmelden", "err");
-        return null;
-      }
+      if (!user) { setState("Bitte neu anmelden", "err"); return null; }
       uid = user.id;
       return window.TLData.loadSettings(uid);
     }).then(function (res) {
       if (!res) return;
       if (res.ok && res.data) {
         currency = res.data.account_currency || "EUR";
-        symbol.textContent = currencySymbol(currency);
-        account.value = res.data.account_size || "";
-        risk.value = res.data.risk_percent != null ? Number(res.data.risk_percent) : 1;
-        autoLot.checked = res.data.auto_lot_calculation !== false;
+        accountInput.value = res.data.account_size || "";
+        riskInput.value = res.data.risk_percent != null ? Number(res.data.risk_percent) : 1;
+        autoLot = res.data.auto_lot_calculation !== false;
+        if (realToggle && realToggle.matches('input[type="checkbox"]')) realToggle.checked = autoLot;
+        if (realToggle && realToggle.getAttribute("role") === "switch") realToggle.setAttribute("aria-checked", autoLot ? "true" : "false");
         updateAmount();
-        setState(account.value ? "Gespeichert ✓" : "Kontogröße eingeben", account.value ? "ok" : "");
-      } else {
-        updateAmount();
-        setState("Kontogröße eingeben", "");
+        setState(accountInput.value ? "Gespeichert ✓" : "Kontogröße eingeben", accountInput.value ? "ok" : "");
       }
     }).catch(function () { setState("Einstellungen konnten nicht geladen werden", "err"); });
   }
@@ -305,11 +250,9 @@
     var c = createClient();
     if (!c) {
       if (typeof api.hideLoading === "function") api.hideLoading();
-      var noConfig = { ok: false, error_code: "model_not_configured", http_status: 0 };
-      showError(noConfig.error_code, "");
-      return Promise.resolve(noConfig);
+      showError("model_not_configured", "");
+      return Promise.resolve({ ok: false, error_code: "model_not_configured" });
     }
-
     return c.auth.getSession().then(function (sessionResult) {
       var token = sessionResult && sessionResult.data && sessionResult.data.session && sessionResult.data.session.access_token;
       if (!token) return { ok: false, error_code: "unauthorized", http_status: 401 };
@@ -319,30 +262,14 @@
       var url = CFG.SUPABASE_URL.replace(/\/+$/, "") + "/functions/v1/smooth-endpoint";
       return fetch(url, {
         method: "POST",
-        headers: {
-          Authorization: "Bearer " + token,
-          apikey: CFG.SUPABASE_ANON_KEY,
-          "Content-Type": "application/json"
-        },
+        headers: { Authorization: "Bearer " + token, apikey: CFG.SUPABASE_ANON_KEY, "Content-Type": "application/json" },
         body: JSON.stringify(body)
       }).then(function (resp) {
         return resp.json().catch(function () { return {}; }).then(function (payload) {
           if (resp.ok && payload && payload.ok) {
-            return {
-              ok: true,
-              status: payload.status,
-              result: payload.result || null,
-              analysis_id: payload.analysis_id || null,
-              cached: !!payload.cached,
-              http_status: resp.status
-            };
+            return { ok: true, status: payload.status, result: payload.result || null, analysis_id: payload.analysis_id || null, cached: !!payload.cached, http_status: resp.status };
           }
-          return {
-            ok: false,
-            error_code: inferCode(resp.status, payload),
-            analysis_id: payload && payload.analysis_id || null,
-            http_status: resp.status
-          };
+          return { ok: false, error_code: inferCode(resp.status, payload), analysis_id: payload && payload.analysis_id || null, http_status: resp.status };
         });
       });
     }).catch(function () {
