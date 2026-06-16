@@ -3620,21 +3620,30 @@ function alError(msg){
   var err=document.getElementById('al-error');
   if(err){err.style.display='block';var m=err.querySelector('.al-emsg');if(m)m.textContent=msg||'Bitte erneut versuchen.';}
 }
-function alCancel(){AN.cancelled=true;AN.busy=false;alStop();navPage('analyse');}
+function alCancel(){AN.cancelled=true;AN.busy=false;alStop();alForceHideOldLoader();navPage('analyse');}
+/* Sicherheitsnetz: den alten Overlay-Lader (#tl-ai-loading, z-index 99999)
+   garantiert unsichtbar machen, falls er aus Altpfaden je gestartet wurde. */
+function alForceHideOldLoader(){var n=document.getElementById('tl-ai-loading');if(n)n.classList.remove('on');}
 
 function analysisRun(uploadId,opts){
   if(!window.TLAnalysis){tlToast('Analyse ist nicht verfügbar.','err');return;}
   if(AN.busy)return;                                  // Doppelaufruf-Schutz
   AN.busy=true;AN.cancelled=false;AN.uploadId=uploadId;AN.opts=opts||{};
   if(UP.current&&UP.current.id===uploadId)AN.storagePath=UP.current.storage_path;
-  navPage('analysis-loading');alStart();              // Vollbild-Ladebildschirm
-  TLAnalysis.analyze(uploadId,opts||{}).then(function(res){
+  navPage('analysis-loading');alStart();              // Vollbild-Ladebildschirm (einziger sichtbarer Lader)
+  // suppress_loading: alten Overlay-Lader von TLAnalysis unterdrücken.
+  TLAnalysis.analyze(uploadId,Object.assign({},opts||{},{suppress_loading:true})).then(function(res){
     AN.busy=false;
     if(AN.cancelled)return;                            // Nutzer hat abgebrochen -> Ergebnis verwerfen
-    if(!res||!res.ok){ alError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
+    if(!res||!res.ok){ alForceHideOldLoader(); alError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
     AN.payload=res.result;AN.status=res.status;
-    alFinish(function(){ if(AN.cancelled)return; navPage('ergebnis'); renderByStatus(res.status,res.result); });
-  }).catch(function(e){ AN.busy=false; if(AN.cancelled)return; console.error('[analysis]',e); alError('Die Analyse konnte nicht durchgeführt werden.'); });
+    alFinish(function(){
+      if(AN.cancelled)return;
+      alForceHideOldLoader();                          // alter Lader garantiert weg
+      renderByStatus(res.status,res.result);           // Ergebnis zuerst befüllen
+      navPage('ergebnis');                             // dann zuverlässig sichtbar schalten
+    });
+  }).catch(function(e){ AN.busy=false; if(AN.cancelled)return; alForceHideOldLoader(); console.error('[analysis]',e); alError('Die Analyse konnte nicht durchgeführt werden.'); });
 }
 function analysisRestore(uploadRow){
   if(!window.TLAnalysis||!uploadRow)return;

@@ -190,7 +190,10 @@
   function analyze(uploadId, opts) {
     opts = opts || {};
     if (!isConfigured()) return Promise.resolve({ ok: false, error_code: "model_not_configured" });
-    showLoading();
+    // Der alte Vollbild-Overlay-Lader (#tl-ai-loading) kann unterdrückt werden,
+    // wenn der Aufrufer bereits einen eigenen Ladescreen anzeigt.
+    var useLoader = opts.suppress_loading !== true;
+    if (useLoader) showLoading();
     var request = accessToken().then(function (tok) {
       if (!tok) return { ok: false, error_code: "unauthorized" };
       var body = { upload_id: uploadId, force_reanalysis: opts.force === true };
@@ -222,11 +225,12 @@
       return { ok: false, error_code: "internal_error" };
     });
 
+    // hideLoading() nur, wenn showLoading() vorher tatsächlich gestartet wurde.
     return request.then(function (result) {
-      hideLoading();
+      if (useLoader) hideLoading();
       return result;
     }, function () {
-      hideLoading();
+      if (useLoader) hideLoading();
       return { ok: false, error_code: "internal_error" };
     });
   }
