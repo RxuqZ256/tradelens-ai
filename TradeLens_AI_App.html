@@ -2544,8 +2544,8 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 @keyframes alFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes alDot{0%,70%,100%{transform:translateY(0);opacity:.4}35%{transform:translateY(-5px);opacity:1}}
 @media(prefers-reduced-motion:reduce){.al-orb .rings,.al-orb .rings2,.al-orb::before,.al-st.doing .ico,.al-chip,.al-foot .dots i{animation-duration:6s;animation-iteration-count:1}}
-body:has(#page-analysis-loading.active) .bottomnav,
-body:has(#page-analysis-loading.active) .home-ind{display:none!important}
+body.analysis-loading-active .bottomnav,
+body.analysis-loading-active .home-ind{display:none!important}
 </style>
 <section class="page" id="page-analysis-loading">
 <div class="appbar">
@@ -3378,9 +3378,20 @@ function removeCurrentUpload(){
     else { uploadState('error',(res&&res.error)||'Konnte nicht entfernt werden.'); }
   });
 }
+/* Gültiger, vollständig abgeschlossener Upload? (keine alte/teilweise ID) */
+function uploadReadyForAnalysis(){
+  return !!(UP.current && UP.current.id && UP.current.storage_path && UP.busy!==true);
+}
+/* Hinweis auf der Analyse-Seite, wenn kein gültiger Upload vorliegt. */
+function analyseUploadHint(){
+  openInternalPage('page-analyse');
+  var sub=upEl('up-sub'); if(sub){sub.textContent='Bitte lade den Chart erneut vollständig hoch.';sub.style.color='#ff5a78';}
+  if(typeof tlToast==='function')tlToast('Bitte lade den Chart erneut vollständig hoch.','err');
+}
 function weiterZurAnalyse(){
-  if(!UP.current||UP.busy)return;
-  analysisRun(UP.current.id,{});
+  if(AN.busy)return;
+  if(!uploadReadyForAnalysis()){ analyseUploadHint(); return; }
+  analysisRun(UP.current.id,{});   // immer die frische, aktuelle Upload-Zeile
 }
 function uploadResetUI(){ UP.current=null; UP.busy=false; showPreview(null); uploadState('idle'); }
 function uploadCleanup(){ try{var img=upEl('up-preview'); if(img)img.src='';}catch(e){} UP.current=null; UP.busy=false; UP.pendingReplace=false; }
@@ -3399,13 +3410,33 @@ function uploadBootstrap(){
 }
 /* ===================== Phase 4: KI-Analyse-UI (rendert validiertes JSON) ===================== */
 var AN={uploadId:null,storagePath:null,payload:null,status:null,busy:false,cancelled:false,opts:null};
-/* Programmatischer Seitenwechsel: entfernt einen evtl. stehenden URL-Hash,
-   damit die per .active gesteuerte Seite zuverlässig sichtbar ist (das
-   :target-Fallback würde sonst die aktive Seite verdecken). */
-function navPage(pg){
+/* Safari-sicherer, synchroner Seitenwechsel.
+   Erwartet die volle Element-ID (z. B. "page-analysis-loading"). Setzt die
+   Sichtbarkeit direkt über .active, räumt blockierende Inline-Styles/Attribute
+   weg und entfernt erst danach einen Hash – unabhängig von :target/Anchor. */
+function openInternalPage(pageId){
+  var pages=document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++){pages[i].classList.remove('active');}
+  var el=document.getElementById(pageId);
+  if(!el)return null;
+  el.classList.add('active');
+  el.removeAttribute('hidden');
+  el.hidden=false;
+  el.style.removeProperty('display');
+  el.style.removeProperty('visibility');
+  el.style.removeProperty('opacity');
+  var pg=pageId.replace(/^page-/,'');
+  var navs=document.querySelectorAll('.nav');
+  for(var j=0;j<navs.length;j++){navs[j].classList.toggle('on',navs[j].dataset.pg===pg);}
+  try{window.scrollTo(0,0);}catch(e){}
+  try{el.scrollTop=0;}catch(e){}
   if(location.hash){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){location.hash='';}}
-  go(pg);
+  if(pg==='analyse'&&typeof uploadStep==='function')uploadStep();
+  if(pg==='overview'&&typeof renderOverview==='function')renderOverview();
+  return el;
 }
+/* Kompatibilitäts-Wrapper: bisherige Kurznamen weiter nutzbar. */
+function navPage(pg){return openInternalPage('page-'+pg);}
 var TF_OPTS=['M1','M5','M15','M30','H1','H4','D1','W1'];
 function anEl(){return document.getElementById('an-root');}
 function anEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -3443,13 +3474,13 @@ function anExplainCard(p){var e=p.explanation||{};
 function anWarnCard(p){var w=(p.setup&&p.setup.warnings)||[];if(!w.length)return '';
   return '<div class="gf mt"><div class="in"><div class="label" style="color:#FFC857">Warnungen</div>'+
     '<ul class="sub mt-s" style="margin:0;padding-left:18px">'+w.map(function(x){return '<li>'+anEsc(x)+'</li>';}).join('')+'</ul></div></div>';}
-function anNewBtn(){return '<button class="btn-ghost mt" onclick="go(\'analyse\')">Neuen Chart hochladen</button>';}
+function anNewBtn(){return '<button class="btn-ghost mt" onclick="openInternalPage(\'page-analyse\')">Neuen Chart hochladen</button>';}
 
 function analysisShowEmpty(){var r=anEl();if(!r)return;
   r.innerHTML='<div class="gf fade-in"><div class="in" style="text-align:center;padding:30px 18px">'+
     '<div class="label">Noch keine KI-Analyse vorhanden</div>'+
     '<p class="sub mt-s">Lade zuerst einen Chart hoch und starte anschließend die Analyse.</p>'+
-    '<button class="btn-ghost mt" onclick="go(\'analyse\')">Zum Upload</button></div></div>';}
+    '<button class="btn-ghost mt" onclick="openInternalPage(\'page-analyse\')">Zum Upload</button></div></div>';}
 function analysisLoading(){var r=anEl();if(!r)return;
   r.innerHTML='<div class="gf fade-in"><div class="in" style="text-align:center;padding:30px 18px">'+
     '<div class="label">Analyse läuft</div>'+
@@ -3461,7 +3492,7 @@ function analysisError(msg){var r=anEl();if(!r)return;
     '<p class="sub mt-s">'+anEsc(msg||'Bitte erneut versuchen.')+'</p>'+
     '<button class="btn-primary mt" onclick="analysisRetry()"><span class="sp">ERNEUT VERSUCHEN</span></button>'+
     '<button class="btn-ghost mt-s" onclick="go(\'analyse\')">Neuen Chart hochladen</button></div></div>';}
-function analysisRetry(){var id=AN.uploadId||(UP.current&&UP.current.id);if(!id){go('analyse');return;}analysisRun(id,{});}
+function analysisRetry(){var id=AN.uploadId||(UP.current&&UP.current.id);if(!id){analyseUploadHint();return;}analysisRun(id,{});}
 
 function renderByStatus(status,p){
   if(status==='completed')return renderCompleted(p);
@@ -3620,30 +3651,54 @@ function alError(msg){
   var err=document.getElementById('al-error');
   if(err){err.style.display='block';var m=err.querySelector('.al-emsg');if(m)m.textContent=msg||'Bitte erneut versuchen.';}
 }
-function alCancel(){AN.cancelled=true;AN.busy=false;alStop();alForceHideOldLoader();navPage('analyse');}
+function alCancel(){AN.cancelled=true;AN.busy=false;alStop();alForceHideOldLoader();alSetLoadingActive(false);openInternalPage('page-analyse');}
 /* Sicherheitsnetz: den alten Overlay-Lader (#tl-ai-loading, z-index 99999)
    garantiert unsichtbar machen, falls er aus Altpfaden je gestartet wurde. */
 function alForceHideOldLoader(){var n=document.getElementById('tl-ai-loading');if(n)n.classList.remove('on');}
+/* Bottom-Nav/Home-Indicator-Ausblendung über explizite Body-Klasse (kein :has). */
+function alSetLoadingActive(on){document.body.classList.toggle('analysis-loading-active',!!on);}
+/* Safari-BFCache: nach Zurück-/Vorwärtsnavigation darf kein blockierter
+   Lade-/Busy-Zustand zurückkehren. */
+window.addEventListener('pageshow',function(e){
+  if(!e.persisted)return;
+  AN.busy=false; AN.cancelled=true;          // evtl. eingefrorene Analyse-Promise verwerfen
+  if(typeof alStop==='function')alStop();      // Loading-Timer/Animationen stoppen
+  alSetLoadingActive(false);                   // Body-Klasse entfernen -> Nav wieder sichtbar
+  alForceHideOldLoader();                       // alten Overlay-Lader schließen
+  if(window.TLAnalysis&&typeof TLAnalysis.hideLoading==='function'){try{TLAnalysis.hideLoading();}catch(_e){}}
+});
 
 function analysisRun(uploadId,opts){
   if(!window.TLAnalysis){tlToast('Analyse ist nicht verfügbar.','err');return;}
-  if(AN.busy)return;                                  // Doppelaufruf-Schutz
+  if(!uploadId){ analyseUploadHint(); return; }        // niemals ohne gültige Upload-ID
+  if(AN.busy)return;                                   // Doppelaufruf-Schutz
   AN.busy=true;AN.cancelled=false;AN.uploadId=uploadId;AN.opts=opts||{};
   if(UP.current&&UP.current.id===uploadId)AN.storagePath=UP.current.storage_path;
-  navPage('analysis-loading');alStart();              // Vollbild-Ladebildschirm (einziger sichtbarer Lader)
+  // 1) Ladebildschirm SOFORT und synchron sichtbar machen (einziger Lader).
+  openInternalPage('page-analysis-loading');
+  alSetLoadingActive(true);
+  alStart();
+  // 2) Safari erst den Ladebildschirm zeichnen lassen, dann erst Netzwerk/Analyse.
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    if(AN.cancelled){AN.busy=false;return;}
+    startRealAnalysis(uploadId,opts||{});
+  });});
+}
+function startRealAnalysis(uploadId,opts){
   // suppress_loading: alten Overlay-Lader von TLAnalysis unterdrücken.
   TLAnalysis.analyze(uploadId,Object.assign({},opts||{},{suppress_loading:true})).then(function(res){
     AN.busy=false;
     if(AN.cancelled)return;                            // Nutzer hat abgebrochen -> Ergebnis verwerfen
-    if(!res||!res.ok){ alForceHideOldLoader(); alError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
+    if(!res||!res.ok){ alForceHideOldLoader(); alSetLoadingActive(false); alError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
     AN.payload=res.result;AN.status=res.status;
     alFinish(function(){
       if(AN.cancelled)return;
       alForceHideOldLoader();                          // alter Lader garantiert weg
-      renderByStatus(res.status,res.result);           // Ergebnis zuerst befüllen
-      navPage('ergebnis');                             // dann zuverlässig sichtbar schalten
+      renderByStatus(res.status,res.result);           // 1) Ergebnis zuerst befüllen
+      openInternalPage('page-ergebnis');               // 2) dann zuverlässig sichtbar schalten
+      alSetLoadingActive(false);                        // 3) Body-Loading-Klasse entfernen
     });
-  }).catch(function(e){ AN.busy=false; if(AN.cancelled)return; alForceHideOldLoader(); console.error('[analysis]',e); alError('Die Analyse konnte nicht durchgeführt werden.'); });
+  }).catch(function(e){ AN.busy=false; if(AN.cancelled)return; alForceHideOldLoader(); alSetLoadingActive(false); console.error('[analysis]',e); alError('Die Analyse konnte nicht durchgeführt werden.'); });
 }
 function analysisRestore(uploadRow){
   if(!window.TLAnalysis||!uploadRow)return;
