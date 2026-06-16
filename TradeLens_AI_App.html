@@ -2272,10 +2272,10 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 </div>
 <div class="hint mt-s"><svg fill="none" height="15" stroke="var(--cyan)" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg> Unterstützte Formate: PNG, JPG, WEBP · Max. 20 MB</div>
 <div class="gf mt-s" id="an-upload-error" style="display:none;background:linear-gradient(135deg,#ff5a78,rgba(124,58,237,.6))"><div class="in" style="padding:13px 15px">
-<div class="row" style="gap:9px"><svg fill="none" height="17" stroke="#ff8fa3" stroke-width="2" viewbox="0 0 24 24" width="17"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg><div class="label" style="color:#ffb3c1">Chart nicht gefunden</div></div>
+<div class="row" style="gap:9px"><svg fill="none" height="17" stroke="#ff8fa3" stroke-width="2" viewbox="0 0 24 24" width="17"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg><div class="label" style="color:#ffb3c1" id="an-upload-error-title">Chart nicht gefunden</div></div>
 <p class="sub mt-s" id="an-upload-error-msg" style="color:#ffd7df">Der hochgeladene Chart konnte nicht mehr gefunden werden. Bitte lade ihn erneut hoch.</p>
 </div></div>
-<button class="btn-primary mt" id="btn-weiter" disabled style="opacity:.45;pointer-events:none" onclick="weiterZurAnalyse()">
+<button type="button" class="btn-primary mt" id="btn-weiter" disabled style="opacity:.45;pointer-events:none" onclick="weiterZurAnalyse(event)">
 <svg fill="none" height="22" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24" width="22"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 0V4a3 3 0 0 0-3-1zM15 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 0"></path></svg>
 <span class="sp">WEITER ZUR ANALYSE</span>
 <svg fill="none" height="20" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24" width="20"><path d="M9 6l6 6-6 6"></path></svg>
@@ -3388,10 +3388,11 @@ function removeCurrentUpload(){
 }
 /* Gültiger, vollständig abgeschlossener Upload? (keine alte/teilweise ID) */
 /* Dauerhaft sichtbare Inline-Fehlermeldung direkt unter dem Upload-Bereich. */
-function showUploadError(msg){
+function showUploadError(msg,title){
   var box=document.getElementById('an-upload-error');
   if(!box)return;
   if(msg){var m=document.getElementById('an-upload-error-msg');if(m)m.textContent=msg;}
+  var t=document.getElementById('an-upload-error-title');if(t)t.textContent=title||'Chart nicht gefunden';
   box.style.display='block';
 }
 function hideUploadError(){var box=document.getElementById('an-upload-error');if(box)box.style.display='none';}
@@ -3403,6 +3404,16 @@ function analyseUploadError(){
   showPreview(null);
   uploadState('idle');   // entfernt falschen Erfolgsstatus, deaktiviert Weiter, ermöglicht neue Auswahl
   showUploadError('Der hochgeladene Chart konnte nicht mehr gefunden werden. Bitte lade ihn erneut hoch.');
+}
+/* Analyse-Modul (TLAnalysis) nicht geladen -> sichtbarer Inline-Fehler, kein Toast.
+   Der Upload bleibt gültig (nur Seite neu laden nötig). */
+function analysisModuleError(){
+  if(typeof alStop==='function')alStop();
+  if(typeof alSetLoadingActive==='function')alSetLoadingActive(false);
+  if(typeof alForceHideOldLoader==='function')alForceHideOldLoader();
+  AN.busy=false;
+  openInternalPage('page-analyse');
+  showUploadError('Das Analyse-Modul konnte nicht geladen werden. Bitte lade die Seite neu.','Analyse nicht verfügbar');
 }
 /* Weiter-Button während der Server-Prüfung sperren / wiederherstellen. */
 function setWeiterChecking(on){
@@ -3417,28 +3428,63 @@ function setWeiterChecking(on){
     btn.disabled=false; btn.style.opacity='1'; btn.style.pointerEvents='auto';
   }
 }
-function weiterZurAnalyse(){
-  if(AN.busy)return;
+/* Abgesicherter Übergang: Ladebildschirm öffnen + echte Analyse starten.
+   Gemeinsam genutzt von weiterZurAnalyse(), confirmAnalysis() und Retry. */
+function enterAnalysisLoading(uploadId,opts){
+  if(!window.TLAnalysis||typeof TLAnalysis.analyze!=='function'){
+    console.error('[TradeLens] TLAnalysis unavailable');
+    analysisModuleError();
+    return false;
+  }
+  console.info('[TradeLens] TLAnalysis available');
+  try{
+    console.info('[TradeLens] opening loading page');
+    var loadingPage=openInternalPage('page-analysis-loading');
+    if(!loadingPage){ throw new Error('analysis_loading_page_not_found'); }
+    alSetLoadingActive(true);
+    alStart();
+    console.info('[TradeLens] loading page visible');
+    AN.busy=true; AN.cancelled=false; AN.uploadId=uploadId;
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      if(AN.cancelled){AN.busy=false;return;}
+      startRealAnalysis(uploadId,opts||{});
+    });});
+    return true;
+  }catch(error){
+    console.error('[TradeLens] analysis transition failed', error);
+    AN.busy=false;
+    alSetLoadingActive(false);
+    openInternalPage('page-analyse');
+    showUploadError('Die Analyse konnte nicht gestartet werden. Bitte lade die Seite neu.','Analyse nicht verfügbar');
+    return false;
+  }
+}
+function weiterZurAnalyse(event){
+  if(event){ if(event.preventDefault)event.preventDefault(); if(event.stopPropagation)event.stopPropagation(); }
+  if(AN.busy||AN.verifying)return;
   console.info('[TradeLens] analyse click');
   if(!window.TLUpload||typeof TLUpload.resolveUploadForAnalysis!=='function'){ analyseUploadError(); return; }
   var localId=(UP.current&&UP.current.id)||null;
   console.info('[TradeLens] local upload id', localId||'none');
+  AN.verifying=true;
   setWeiterChecking(true);          // sofortige sichtbare Reaktion, kein stiller Abbruch
   TLUpload.resolveUploadForAnalysis(localId).then(function(res){
+    AN.verifying=false;
     if(!res||!res.ok||!res.row||!res.row.id||!res.row.storage_path){
       console.info('[TradeLens] upload verification failed');
       setWeiterChecking(false);
       analyseUploadError();
       return;
     }
+    console.info('[TradeLens] upload verified');
     UP.current=res.row;
     try{STORE.uploadId=res.row.id;saveStore();}catch(e){}
     AN.uploadId=res.row.id; AN.storagePath=res.row.storage_path;
-    console.info('[TradeLens] verified database upload', res.row.id);
     setWeiterChecking(false);
-    analysisRun(res.row.id,{});      // garantiert die serverseitig verifizierte UUID
-  }).catch(function(){
-    console.info('[TradeLens] upload verification failed');
+    enterAnalysisLoading(res.row.id,{});   // verifizierte UUID -> Ladebildschirm -> echte Analyse
+  }).catch(function(error){
+    AN.verifying=false;
+    console.error('[TradeLens] analysis transition failed', error);
     setWeiterChecking(false);
     analyseUploadError();
   });
@@ -3459,7 +3505,7 @@ function uploadBootstrap(){
   }).catch(function(){ uploadResetUI(); });
 }
 /* ===================== Phase 4: KI-Analyse-UI (rendert validiertes JSON) ===================== */
-var AN={uploadId:null,storagePath:null,payload:null,status:null,busy:false,cancelled:false,opts:null};
+var AN={uploadId:null,storagePath:null,payload:null,status:null,busy:false,cancelled:false,verifying:false,opts:null};
 /* Safari-sicherer, synchroner Seitenwechsel.
    Erwartet die volle Element-ID (z. B. "page-analysis-loading"). Setzt die
    Sichtbarkeit direkt über .active, räumt blockierende Inline-Styles/Attribute
@@ -3468,7 +3514,7 @@ function openInternalPage(pageId){
   var pages=document.querySelectorAll('.page');
   for(var i=0;i<pages.length;i++){pages[i].classList.remove('active');}
   var el=document.getElementById(pageId);
-  if(!el)return null;
+  if(!el){console.error('[TradeLens] page not found', pageId);return null;}
   el.classList.add('active');
   el.removeAttribute('hidden');
   el.hidden=false;
@@ -3711,28 +3757,22 @@ function alSetLoadingActive(on){document.body.classList.toggle('analysis-loading
    Lade-/Busy-Zustand zurückkehren. */
 window.addEventListener('pageshow',function(e){
   if(!e.persisted)return;
-  AN.busy=false; AN.cancelled=true;          // evtl. eingefrorene Analyse-Promise verwerfen
+  AN.busy=false; AN.cancelled=true; AN.verifying=false;   // evtl. eingefrorene Promise verwerfen
   if(typeof alStop==='function')alStop();      // Loading-Timer/Animationen stoppen
   alSetLoadingActive(false);                   // Body-Klasse entfernen -> Nav wieder sichtbar
   alForceHideOldLoader();                       // alten Overlay-Lader schließen
+  if(typeof setWeiterChecking==='function')setWeiterChecking(false);  // Button-Text wiederherstellen
   if(window.TLAnalysis&&typeof TLAnalysis.hideLoading==='function'){try{TLAnalysis.hideLoading();}catch(_e){}}
 });
 
+/* Sekundärer Einstieg (Bestätigung/Retry). Navigation läuft ausschließlich
+   über enterAnalysisLoading – kein doppelter Seitenwechsel. */
 function analysisRun(uploadId,opts){
-  if(!window.TLAnalysis){tlToast('Analyse ist nicht verfügbar.','err');return;}
   if(!uploadId){ analyseUploadError(); return; }        // niemals ohne gültige Upload-ID
-  if(AN.busy)return;                                   // Doppelaufruf-Schutz
-  AN.busy=true;AN.cancelled=false;AN.uploadId=uploadId;AN.opts=opts||{};
+  if(AN.busy)return;                                    // Doppelaufruf-Schutz
+  AN.opts=opts||{};
   if(UP.current&&UP.current.id===uploadId)AN.storagePath=UP.current.storage_path;
-  // 1) Ladebildschirm SOFORT und synchron sichtbar machen (einziger Lader).
-  openInternalPage('page-analysis-loading');
-  alSetLoadingActive(true);
-  alStart();
-  // 2) Safari erst den Ladebildschirm zeichnen lassen, dann erst Netzwerk/Analyse.
-  requestAnimationFrame(function(){requestAnimationFrame(function(){
-    if(AN.cancelled){AN.busy=false;return;}
-    startRealAnalysis(uploadId,opts||{});
-  });});
+  enterAnalysisLoading(uploadId,opts||{});
 }
 /* upload_not_found während der Analyse: Zustand löschen, zurück zur Analyse,
    sichtbare Meldung – KEIN „Erneut versuchen" mit derselben ungültigen ID. */
@@ -3743,7 +3783,7 @@ function handleUploadNotFound(){
   analyseUploadError();
 }
 function startRealAnalysis(uploadId,opts){
-  console.info('[TradeLens] starting analysis with upload id', uploadId);
+  console.info('[TradeLens] starting real analysis');
   // suppress_loading: alten Overlay-Lader von TLAnalysis unterdrücken.
   TLAnalysis.analyze(uploadId,Object.assign({},opts||{},{suppress_loading:true})).then(function(res){
     AN.busy=false;
@@ -4769,17 +4809,17 @@ function saveAccount(){
    Daten eines vorherigen Kontos kurz angezeigt. */
 </script>
 <!-- ===== TradeLens Auth-/Data-/Upload-Guard (Phase 3) – Reihenfolge: config -> supabase -> auth -> data -> tus -> upload -> init ===== -->
-<script src="tradelens-config.js"></script>
+<script src="tradelens-config.js?v=10"></script>
 <script>
   (function(){
     var cfg = window.TRADELENS_CONFIG || {};
     function loadScript(src, cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; s.onerror=function(){ console.error('[TradeLens] Konnte nicht laden:', src); cb(); }; document.head.appendChild(s); }
     loadScript(cfg.SUPABASE_JS_CDN || 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js', function(){
-      loadScript('tradelens-auth.js', function(){
-        loadScript('tradelens-data.js', function(){
+      loadScript('tradelens-auth.js?v=10', function(){
+        loadScript('tradelens-data.js?v=10', function(){
           loadScript(cfg.TUS_JS_CDN || 'https://cdn.jsdelivr.net/npm/tus-js-client@4.1.0/dist/tus.min.js', function(){
-            loadScript('tradelens-upload.js', function(){
-              loadScript('tradelens-analysis.js', function(){
+            loadScript('tradelens-upload.js?v=10', function(){
+              loadScript('tradelens-analysis.js?v=10', function(){
                 if(window.TLAuth && typeof TLAuth.guardApp==='function'){ TLAuth.guardApp(); }
                 else { document.documentElement.classList.remove('tl-gate'); } /* Fallback: niemals dauerhaft leere Seite */
                 if(typeof tlBootstrap==='function'){ tlBootstrap(); } /* lädt Profil + Settings + letzten Upload + letzte Analyse */
