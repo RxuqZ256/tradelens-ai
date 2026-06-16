@@ -45,5 +45,12 @@ window.TRADELENS_CONFIG = {
      Supabase-JS-Bibliothek (UMD-Build) vom CDN.
      Bei Bedarf auf eine self-gehostete Kopie umstellbar.
      ------------------------------------------------------------------- */
-  SUPABASE_JS_CDN: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+  SUPABASE_JS_CDN: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
+
+  /* -------------------------------------------------------------------
+     Slug der deployten Supabase Edge Function für die Chartanalyse.
+     Aktuell in Supabase veröffentlicht als "smooth-endpoint"
+     (Quellcode im Repo: supabase/functions/analyze-chart).
+     ------------------------------------------------------------------- */
+  ANALYZE_FUNCTION: "smooth-endpoint"
 };

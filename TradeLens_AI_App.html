@@ -1047,6 +1047,20 @@ body{
   box-shadow:inset 0 0 15px rgba(0,229,255,.035);
 }
 
+/* Editierbare Wertefelder der SETTINGS-Karte: identische Box wie die
+   ursprünglichen .set-val-Spans (Rahmen, Radius, Padding, Schrift, rechtsbündig).
+   Nur das native Input-Aussehen wird neutralisiert – keine Layout-Änderung. */
+input.set-val{
+  width:96px;
+  appearance:none;
+  -webkit-appearance:none;
+  background:transparent;
+  outline:none;
+  cursor:text;
+}
+input.set-val::placeholder{color:var(--txt-3)}
+input.set-val:focus{border-color:rgba(0,229,255,.6)!important}
+
 #page-analyse #uploadStatus{
   box-shadow:0 0 20px rgba(0,255,156,.12)!important;
 }
@@ -2238,8 +2252,8 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 <div class="in">
 <div class="row"><div class="label">Settings</div><svg fill="none" height="17" stroke="var(--txt-2)" stroke-width="2" viewbox="0 0 24 24" width="17"><path d="M6 6l12 12M18 6L6 18"></path></svg></div>
 <div class="mt-s">
-<div class="set-row"><div class="set-ico"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><rect height="13" rx="2" width="20" x="2" y="6"></rect><path d="M16 12h2"></path></svg></div><span class="name">Kontogröße</span><span class="set-val" id="an-size">—</span></div>
-<div class="set-row"><div class="set-ico"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"></path></svg></div><span class="name">Risiko pro Trade</span><span class="set-val" id="an-risk">—</span></div>
+<div class="set-row"><div class="set-ico"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><rect height="13" rx="2" width="20" x="2" y="6"></rect><path d="M16 12h2"></path></svg></div><span class="name">Kontogröße</span><input class="set-val" id="an-size" type="text" inputmode="decimal" autocomplete="off" placeholder="Nicht gesetzt"></div>
+<div class="set-row"><div class="set-ico"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"></path></svg></div><span class="name">Risiko pro Trade</span><input class="set-val" id="an-risk" type="text" inputmode="decimal" autocomplete="off" placeholder="—"></div>
 <div class="set-row"><div class="set-ico"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5c0-1.5 1.2-2 2.5-2s2.5.5 2.5 2-1 1.8-2.5 2.2c-1.5.4-2.5 1-2.5 2.3s1.2 2 2.5 2 2.5-.5 2.5-2"></path></svg></div><span class="name">Risiko-Betrag</span><span class="set-val vio" id="an-riskamt" style="color:#7C8DFF">—</span></div>
 <div class="set-row"><div class="set-ico"><svg fill="none" height="17" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="17"><rect height="20" rx="2" width="16" x="4" y="2"></rect><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2"></path></svg></div><span class="name">Lotgröße automatisch berechnen</span><div class="toggle on" id="an-autolot" onclick="autoLotToggle(this)"></div></div>
 </div>
@@ -3117,15 +3131,67 @@ function renderProfileHeader(name,email,createdAt){
 /* Gespeicherte Einstellungen in die Bedienelemente spiegeln */
 function setToggleId(id,on){var e=document.getElementById(id);if(e)e.classList.toggle('on',!!on);}
 function fmtPct(p){return (p!=null)?(String(p).replace('.',',')+' %'):'—';}
+/* Schreibt einen Settings-Wert in ein Feld. Editierbare Inputs (Analyse-Karte)
+   erhalten den rohen Zahlwert (.value), Anzeige-Spans den formatierten Text.
+   Ein gerade fokussiertes Input wird nie überschrieben (keine Tipp-Störung). */
+function setSettingField(id,raw,display){
+  var e=document.getElementById(id);if(!e)return;
+  if(e.tagName==='INPUT'){
+    if(document.activeElement!==e){e.value=(raw!=null)?String(raw).replace('.',','):'';}
+  }else{e.textContent=display;}
+}
 function renderAccountRows(){
   var s=STORE.settings,cur=s.currency||'EUR';
-  var size=(s.accountSize!=null)?fmtMoney(s.accountSize,cur):'Nicht gesetzt';
-  var risk=(s.riskPercent!=null)?fmtPct(s.riskPercent):'—';
+  var sizeRaw=(s.accountSize!=null)?s.accountSize:null;
+  var riskRaw=(s.riskPercent!=null)?s.riskPercent:null;
+  var sizeDisp=(s.accountSize!=null)?fmtMoney(s.accountSize,cur):'Nicht gesetzt';
+  var riskDisp=(s.riskPercent!=null)?fmtPct(s.riskPercent):'—';
   var amt=(s.accountSize!=null&&s.riskPercent!=null)?fmtMoney(s.accountSize*s.riskPercent/100,cur):'—';
-  ['an-size','an2-size'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=size;});
-  ['an-risk','an2-risk'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=risk;});
+  setSettingField('an-size',sizeRaw,sizeDisp);
+  setSettingField('an2-size',sizeRaw,sizeDisp);
+  setSettingField('an-risk',riskRaw,riskDisp);
+  setSettingField('an2-risk',riskRaw,riskDisp);
   ['an-riskamt','an2-riskamt'].forEach(function(id){var e=document.getElementById(id);if(e)e.textContent=amt;});
   setToggleId('an-autolot',s.autoLot);
+  wireAnalyseSettingInputs();
+}
+/* Live-Neuberechnung des Risiko-Betrags aus den Eingabefeldern der Karte. */
+function anRecalcRiskAmt(){
+  var sEl=document.getElementById('an-size'),rEl=document.getElementById('an-risk');
+  var sz=sEl?parseNum(sEl.value):NaN,rk=rEl?parseNum(rEl.value):NaN;
+  var cur=(STORE.settings.currency)||'EUR';
+  var amt=(isFinite(sz)&&sz>0&&isFinite(rk)&&rk>0)?fmtMoney(sz*rk/100,cur):'—';
+  var a=document.getElementById('an-riskamt');if(a)a.textContent=amt;
+  var a2=document.getElementById('an2-riskamt');if(a2)a2.textContent=amt;
+}
+/* Eingaben übernehmen: lokaler Cache sofort, danach Supabase (user_settings). */
+var _anSaveTimer=null;
+function anCommitSettings(){
+  var sEl=document.getElementById('an-size'),rEl=document.getElementById('an-risk');
+  var sz=sEl?parseNum(sEl.value):NaN,rk=rEl?parseNum(rEl.value):NaN;
+  var partial={
+    accountSize:(isFinite(sz)&&sz>0)?sz:null,
+    riskPercent:(isFinite(rk)&&rk>=0.01&&rk<=10)?rk:null
+  };
+  tlSaveSettings(partial,function(ok){
+    if(!ok){tlSyncFail();return;}
+    if(typeof renderOverview==='function')renderOverview();
+  });
+}
+function anOnSettingInput(){
+  anRecalcRiskAmt();
+  clearTimeout(_anSaveTimer);
+  _anSaveTimer=setTimeout(anCommitSettings,600);
+}
+/* Eingabefelder der Analyse-SETTINGS-Karte einmalig verdrahten. */
+function wireAnalyseSettingInputs(){
+  ['an-size','an-risk'].forEach(function(id){
+    var e=document.getElementById(id);
+    if(!e||e.tagName!=='INPUT'||e._tlWired)return;
+    e._tlWired=true;
+    e.addEventListener('input',anOnSettingInput);
+    e.addEventListener('blur',function(){clearTimeout(_anSaveTimer);anCommitSettings();});
+  });
 }
 function applySettingsToUI(){
   var s=STORE.settings;
