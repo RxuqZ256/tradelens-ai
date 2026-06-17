@@ -172,21 +172,31 @@
   var style = document.createElement('style');
   style.id = 'tradelens-startpage-visibility-fix';
   style.textContent = [
-    '#page-uebersicht{',
+    '#page-overview,#page-uebersicht{',
     '  padding-bottom:calc(220px + env(safe-area-inset-bottom))!important;',
     '  scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom));',
     '}',
-    '#page-uebersicht::after{',
+    '#page-overview::after,#page-uebersicht::after{',
     '  content:"";',
     '  display:block;',
     '  width:100%;',
     '  height:calc(90px + env(safe-area-inset-bottom));',
     '  pointer-events:none;',
     '}',
-    '#page-uebersicht .card:last-of-type,',
-    '#page-uebersicht .gf:last-of-type{',
+    '#page-overview .card:last-of-type,#page-overview .gf:last-of-type,',
+    '#page-uebersicht .card:last-of-type,#page-uebersicht .gf:last-of-type{',
     '  margin-bottom:18px;',
     '}'
   ].join('\n');
   document.head.appendChild(style);
+})();
+
+/* Live-Marktdaten-Modul nachladen, ohne die große App-Datei anzufassen. */
+(function loadTradeLensMarketModule() {
+  if (document.querySelector('script[data-tl-market]')) return;
+  var script = document.createElement('script');
+  script.src = 'tradelens-market.js?v=20260617a';
+  script.async = false;
+  script.setAttribute('data-tl-market', 'true');
+  document.head.appendChild(script);
 })();
