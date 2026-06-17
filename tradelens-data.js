@@ -53,8 +53,8 @@
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: false,   // Auth-Schicht verarbeitet die URL bereits
-          storageKey: "tradelens_auth" // gleiche Session wie tradelens-auth.js
+          detectSessionInUrl: false,
+          storageKey: "tradelens_auth"
         }
       });
     } catch (e) {
@@ -111,7 +111,6 @@
           return { ok: false, data: null, error: r.error, offline: true };
         }
         if (r.data) return { ok: true, data: r.data, created: false };
-        // Keine Zeile vorhanden -> einmalig Standardzeile anlegen.
         var row = Object.assign({ user_id: uid }, DEFAULTS);
         return c.from('user_settings').insert(row).select('*').single()
           .then(function (ins) {
@@ -159,4 +158,35 @@
     saveSettings: saveSettings,
     DEFAULTS: DEFAULTS
   };
+})();
+
+/* =====================================================================
+   Mobile Startseiten-Korrektur
+   ---------------------------------------------------------------------
+   Verhindert, dass die feste Bottom-Navigation den letzten Bereich
+   "Wichtige Zonen – Markt" verdeckt. Die Übersicht erhält ein größeres
+   Scroll-Ende inklusive iPhone-Safe-Area.
+   ===================================================================== */
+(function injectStartpageVisibilityFix() {
+  if (document.getElementById('tradelens-startpage-visibility-fix')) return;
+  var style = document.createElement('style');
+  style.id = 'tradelens-startpage-visibility-fix';
+  style.textContent = [
+    '#page-uebersicht{',
+    '  padding-bottom:calc(220px + env(safe-area-inset-bottom))!important;',
+    '  scroll-padding-bottom:calc(220px + env(safe-area-inset-bottom));',
+    '}',
+    '#page-uebersicht::after{',
+    '  content:"";',
+    '  display:block;',
+    '  width:100%;',
+    '  height:calc(90px + env(safe-area-inset-bottom));',
+    '  pointer-events:none;',
+    '}',
+    '#page-uebersicht .card:last-of-type,',
+    '#page-uebersicht .gf:last-of-type{',
+    '  margin-bottom:18px;',
+    '}'
+  ].join('\n');
+  document.head.appendChild(style);
 })();
