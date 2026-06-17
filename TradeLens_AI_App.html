@@ -2275,7 +2275,7 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 <div class="row" style="gap:9px"><svg fill="none" height="17" stroke="#ff8fa3" stroke-width="2" viewbox="0 0 24 24" width="17"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16h.01"></path></svg><div class="label" style="color:#ffb3c1" id="an-upload-error-title">Chart nicht gefunden</div></div>
 <p class="sub mt-s" id="an-upload-error-msg" style="color:#ffd7df">Der hochgeladene Chart konnte nicht mehr gefunden werden. Bitte lade ihn erneut hoch.</p>
 </div></div>
-<button type="button" class="btn-primary mt" id="btn-weiter" disabled style="opacity:.45;pointer-events:none" onclick="weiterZurAnalyse(event)">
+<button type="button" class="btn-primary mt" id="btn-weiter" disabled style="opacity:.45;pointer-events:none">
 <svg fill="none" height="22" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24" width="22"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 0V4a3 3 0 0 0-3-1zM15 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 0"></path></svg>
 <span class="sp">WEITER ZUR ANALYSE</span>
 <svg fill="none" height="20" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24" width="20"><path d="M9 6l6 6-6 6"></path></svg>
@@ -2550,6 +2550,22 @@ body:has(#page-profil:target) .nav[data-pg="profil"]::after{
 @media(prefers-reduced-motion:reduce){.al-orb .rings,.al-orb .rings2,.al-orb::before,.al-st.doing .ico,.al-chip,.al-foot .dots i{animation-duration:6s;animation-iteration-count:1}}
 body.analysis-loading-active .bottomnav,
 body.analysis-loading-active .home-ind{display:none!important}
+</style>
+<style id="tl-touch-fix">
+/* Weiter-Button deutlich oberhalb der Bottom-Navigation, eigene Touch-Ebene. */
+#page-analyse #btn-weiter{
+  position:relative;
+  z-index:30;
+  touch-action:manipulation;
+  margin-bottom:calc(90px + env(safe-area-inset-bottom));
+}
+/* Bottom-Navigation fängt außerhalb der sichtbaren Einträge keine Taps ab.
+   Nur die .nav-Einträge bleiben tappbar; Container, Glow und Pseudo-Elemente
+   lassen Taps durch. */
+.bottomnav{pointer-events:none!important}
+.bottomnav .nav{pointer-events:auto!important}
+.bottomnav::before,.bottomnav::after{pointer-events:none!important}
+.home-ind{pointer-events:none!important}
 </style>
 <section class="page" id="page-analysis-loading">
 <div class="appbar">
@@ -2946,14 +2962,16 @@ body.analysis-loading-active .home-ind{display:none!important}
 </div>
 <script>
 function go(pg){
+  var target=document.getElementById('page-'+pg);
+  var wasActive=!!(target&&target.classList.contains('active'));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+pg).classList.add('active');
+  if(target)target.classList.add('active');
   document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.pg===pg));
-  document.getElementById('page-'+pg).scrollTop=0;
-  if(pg==='analyse') uploadStep();
+  if(!wasActive&&target)target.scrollTop=0;     // nur bei echtem Seitenwechsel nach oben springen
+  if(pg==='analyse') uploadStep(wasActive);
   if(pg==='overview'&&typeof renderOverview==='function') renderOverview();
 }
-function uploadStep(){document.getElementById('a-upload').style.display='block';document.getElementById('a-setup').style.display='none';document.getElementById('page-analyse').scrollTop=0;}
+function uploadStep(keepScroll){document.getElementById('a-upload').style.display='block';document.getElementById('a-setup').style.display='none';if(!keepScroll)document.getElementById('page-analyse').scrollTop=0;}
 function setupStep(){document.getElementById('a-upload').style.display='none';document.getElementById('a-setup').style.display='block';document.getElementById('page-analyse').scrollTop=0;drawSetupChart();}
 function pulse(el){el.animate([{transform:'scale(1)'},{transform:'scale(.985)'},{transform:'scale(1)'}],{duration:220});}
 function chip(el){el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
@@ -3489,6 +3507,15 @@ function weiterZurAnalyse(event){
     analyseUploadError();
   });
 }
+/* Button zusätzlich (nicht nur über Inline-onclick) verdrahten – einmalig. */
+function wireAnalysisButton(){
+  var btn=document.getElementById('btn-weiter');
+  if(!btn||btn.dataset.wired==='1')return;
+  btn.dataset.wired='1';
+  btn.addEventListener('click',weiterZurAnalyse,{passive:false});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wireAnalysisButton);
+else wireAnalysisButton();
 function uploadResetUI(){ UP.current=null; UP.busy=false; showPreview(null); uploadState('idle'); }
 function uploadCleanup(){ try{var img=upEl('up-preview'); if(img)img.src='';}catch(e){} UP.current=null; UP.busy=false; UP.pendingReplace=false; }
 function uploadBootstrap(){
