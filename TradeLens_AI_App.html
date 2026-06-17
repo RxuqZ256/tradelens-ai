@@ -2599,8 +2599,9 @@ body.analysis-loading-active .home-ind{display:none!important}
 <div class="gf" id="al-error"><div class="in">
 <div class="label" style="color:#FF4D6D">Analyse fehlgeschlagen</div>
 <p class="al-emsg">Bitte erneut versuchen.</p>
-<button class="btn-primary mt" onclick="analysisRetry()"><span class="sp">ERNEUT VERSUCHEN</span></button>
-<button class="btn-ghost mt-s" onclick="alCancel()">Zurück zum Upload</button>
+<div id="al-error-code" style="margin-top:6px;font-family:var(--f-num);font-size:11px;letter-spacing:.4px;color:#94a3b8"></div>
+<button type="button" class="btn-primary mt" id="al-retry-btn" onclick="analysisLoadingRetry()"><span class="sp">ERNEUT VERSUCHEN</span></button>
+<button type="button" class="btn-ghost mt-s" onclick="alCancel()">Zurück zum Upload</button>
 </div></div>
 </section>
 <section class="page" id="page-ergebnis">
@@ -3477,36 +3478,101 @@ function enterAnalysisLoading(uploadId,opts){
     return false;
   }
 }
+/* Neuer verbindlicher Ablauf: Ladebildschirm ZUERST synchron öffnen,
+   darin "Upload wird geprüft" zeigen, dann verifizieren und analysieren.
+   Jeder Fehler bleibt sichtbar IM Ladebildschirm (kein stiller Rücksprung). */
 function weiterZurAnalyse(event){
   if(event){ if(event.preventDefault)event.preventDefault(); if(event.stopPropagation)event.stopPropagation(); }
   if(AN.busy||AN.verifying)return;
   console.info('[TradeLens] analyse click');
-  if(!window.TLUpload||typeof TLUpload.resolveUploadForAnalysis!=='function'){ analyseUploadError(); return; }
-  var localId=(UP.current&&UP.current.id)||null;
-  console.info('[TradeLens] local upload id', localId||'none');
-  AN.verifying=true;
-  setWeiterChecking(true);          // sofortige sichtbare Reaktion, kein stiller Abbruch
-  TLUpload.resolveUploadForAnalysis(localId).then(function(res){
-    AN.verifying=false;
-    if(!res||!res.ok||!res.row||!res.row.id||!res.row.storage_path){
-      console.info('[TradeLens] upload verification failed');
-      setWeiterChecking(false);
-      analyseUploadError();
-      return;
-    }
-    console.info('[TradeLens] upload verified');
-    UP.current=res.row;
-    try{STORE.uploadId=res.row.id;saveStore();}catch(e){}
-    AN.uploadId=res.row.id; AN.storagePath=res.row.storage_path;
-    setWeiterChecking(false);
-    enterAnalysisLoading(res.row.id,{});   // verifizierte UUID -> Ladebildschirm -> echte Analyse
-  }).catch(function(error){
-    AN.verifying=false;
-    console.error('[TradeLens] analysis transition failed', error);
-    setWeiterChecking(false);
-    analyseUploadError();
-  });
+  AN.verifying=true; AN.busy=true; AN.cancelled=false;
+  try{
+    var page=openInternalPage('page-analysis-loading');
+    if(!page){ throw new Error('loading_page_not_found'); }
+    alSetLoadingActive(true);
+    alStart();
+    alSetVerificationState();          // sichtbar: "Upload wird geprüft …"
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      verifyUploadAndStartAnalysis();
+    });});
+  }catch(error){
+    handleAnalysisStartFailure(error);
+  }
 }
+async function verifyUploadAndStartAnalysis(){
+  try{
+    if(!window.TLUpload||typeof TLUpload.resolveUploadForAnalysis!=='function'){
+      throw new Error('upload_module_unavailable');
+    }
+    var localId=(UP.current&&UP.current.id)||null;
+    console.info('[TradeLens] verifying upload');
+    var timer=null;
+    var timeoutP=new Promise(function(_,reject){ timer=setTimeout(function(){ reject(new Error('upload_verification_timeout')); },10000); });
+    var result=await Promise.race([ TLUpload.resolveUploadForAnalysis(localId), timeoutP ]);
+    if(timer)clearTimeout(timer);          // verhindert späte/unbehandelte Timeout-Rejection
+    if(!result||!result.ok||!(result.row&&result.row.id)||!(result.row&&result.row.storage_path)){
+      throw new Error('upload_verification_failed');
+    }
+    UP.current=result.row;
+    try{STORE.uploadId=result.row.id;saveStore();}catch(e){}
+    AN.uploadId=result.row.id;
+    AN.storagePath=result.row.storage_path;
+    AN.verifying=false;
+    console.info('[TradeLens] upload verified');
+    if(!window.TLAnalysis||typeof TLAnalysis.analyze!=='function'){
+      throw new Error('analysis_module_unavailable');
+    }
+    startRealAnalysis(result.row.id,{});
+  }catch(error){
+    AN.verifying=false;
+    AN.busy=false;
+    showAnalysisLoadingError(error);
+  }
+}
+/* Ladebildschirm-Status während der Upload-Prüfung. */
+function alSetFootText(msg){var t=document.querySelector('#page-analysis-loading .al-foot .t');if(t)t.textContent=msg;}
+function alSetVerificationState(){ alSetFootText('Upload wird geprüft …'); }
+/* Diagnosecodes für sichtbare Fehler im Ladebildschirm. */
+var AL_ERR={
+  loading_page_not_found:{code:'TL-A01',msg:'Der Ladebildschirm konnte nicht geöffnet werden. Bitte lade die Seite neu.'},
+  upload_module_unavailable:{code:'TL-A02',msg:'Das Upload-Modul konnte nicht geladen werden. Bitte lade die Seite neu.'},
+  upload_verification_failed:{code:'TL-A03',msg:'Der hochgeladene Chart konnte nicht gefunden werden. Bitte lade ihn erneut hoch.'},
+  upload_verification_timeout:{code:'TL-A04',msg:'Die Upload-Prüfung hat zu lange gedauert. Bitte erneut versuchen.'},
+  analysis_module_unavailable:{code:'TL-A05',msg:'Das Analyse-Modul konnte nicht geladen werden. Bitte lade die Seite neu.'},
+  analysis_call_failed:{code:'TL-A06',msg:'Die Analyse konnte nicht gestartet werden. Bitte erneut versuchen.'}
+};
+function showAnalysisLoadingError(error,customMsg){
+  var key=(error&&error.message)||'analysis_call_failed';
+  var info=AL_ERR[key]||AL_ERR.analysis_call_failed;
+  console.error('[TradeLens] analysis error', info.code);
+  AN.busy=false; AN.verifying=false; AN.cancelled=true;   // laufende/späte Analyse verwerfen
+  if(typeof alStop==='function')alStop();
+  if(typeof alForceHideOldLoader==='function')alForceHideOldLoader();
+  var lp=document.getElementById('page-analysis-loading');
+  var onLoading=!!(lp&&lp.classList.contains('active'));
+  if(!onLoading){
+    // Ladebildschirm nicht verfügbar (z. B. TL-A01) -> sichtbar auf der Analyse-Seite
+    alSetLoadingActive(false);
+    openInternalPage('page-analyse');
+    showUploadError((customMsg||info.msg)+' (Fehlercode: '+info.code+')','Analyse nicht verfügbar');
+    return;
+  }
+  alSetLoadingActive(false);                 // Nav verfügbar, Ladebildschirm bleibt sichtbar
+  var main=document.getElementById('al-main'); if(main)main.style.display='none';
+  var box=document.getElementById('al-error'); if(box)box.style.display='block';
+  var m=document.querySelector('#al-error .al-emsg'); if(m)m.textContent=customMsg||info.msg;
+  var c=document.getElementById('al-error-code'); if(c)c.textContent='Fehlercode: '+info.code;
+  var retry=document.getElementById('al-retry-btn'); if(retry)retry.style.display=AN.uploadId?'':'none';
+}
+function handleAnalysisStartFailure(error){ AN.verifying=false; AN.busy=false; showAnalysisLoadingError(error); }
+function analysisLoadingRetry(){ if(AN.busy||AN.verifying)return; weiterZurAnalyse(); }
+/* Unhandled-Errors während des Analyseablaufs sichtbar machen (nur dann). */
+window.addEventListener('unhandledrejection',function(e){
+  if(AN.busy||AN.verifying){ if(e&&e.preventDefault)e.preventDefault(); showAnalysisLoadingError(new Error('analysis_call_failed')); }
+});
+window.addEventListener('error',function(){
+  if(AN.busy||AN.verifying){ showAnalysisLoadingError(new Error('analysis_call_failed')); }
+});
 /* Button zusätzlich (nicht nur über Inline-onclick) verdrahten – einmalig. */
 function wireAnalysisButton(){
   var btn=document.getElementById('btn-weiter');
@@ -3811,12 +3877,13 @@ function handleUploadNotFound(){
 }
 function startRealAnalysis(uploadId,opts){
   console.info('[TradeLens] starting real analysis');
+  alSetFootText('Bitte warte einen Moment … die KI erstellt dein Setup');
   // suppress_loading: alten Overlay-Lader von TLAnalysis unterdrücken.
   TLAnalysis.analyze(uploadId,Object.assign({},opts||{},{suppress_loading:true})).then(function(res){
     AN.busy=false;
     if(AN.cancelled)return;                            // Nutzer hat abgebrochen -> Ergebnis verwerfen
     if(res&&res.error_code==='upload_not_found'){ handleUploadNotFound(); return; }
-    if(!res||!res.ok){ alForceHideOldLoader(); alSetLoadingActive(false); alError(TLAnalysis.message(res?res.error_code:'internal_error')); return; }
+    if(!res||!res.ok){ showAnalysisLoadingError(new Error('analysis_call_failed'), TLAnalysis.message(res?res.error_code:'internal_error')); return; }
     AN.payload=res.result;AN.status=res.status;
     alFinish(function(){
       if(AN.cancelled)return;
@@ -3825,7 +3892,7 @@ function startRealAnalysis(uploadId,opts){
       openInternalPage('page-ergebnis');               // 2) dann zuverlässig sichtbar schalten
       alSetLoadingActive(false);                        // 3) Body-Loading-Klasse entfernen
     });
-  }).catch(function(e){ AN.busy=false; if(AN.cancelled)return; alForceHideOldLoader(); alSetLoadingActive(false); console.error('[analysis]',e); alError('Die Analyse konnte nicht durchgeführt werden.'); });
+  }).catch(function(e){ if(AN.cancelled)return; console.error('[TradeLens] analysis call error'); showAnalysisLoadingError(new Error('analysis_call_failed')); });
 }
 function analysisRestore(uploadRow){
   if(!window.TLAnalysis||!uploadRow)return;
