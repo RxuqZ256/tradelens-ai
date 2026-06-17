@@ -1,10 +1,5 @@
 /* =====================================================================
    TradeLens AI – Öffentliche Konfiguration
-   ---------------------------------------------------------------------
-   WICHTIG:
-   - Hier gehören NUR ÖFFENTLICHE Werte hinein (Anon-Key ist öffentlich).
-   - NIEMALS den geheimen Service-Role-Key hier eintragen.
-   - Diese Datei wird vom Browser geladen und ist für jeden sichtbar.
    ===================================================================== */
 window.TRADELENS_CONFIG = {
   APP_MODE: "production",
@@ -18,36 +13,35 @@ window.TRADELENS_CONFIG = {
   MARKET_DATA_FUNCTION: "market-data"
 };
 
-/* Live-Marktdaten unabhängig von der sichtbaren URL starten.
-   Das Modul beendet sich auf Seiten ohne Übersichtskarten automatisch. */
 (function bootTradeLensMarketData() {
   "use strict";
 
   function injectSpacingFix() {
-    var oldIds = [
+    var ids = [
       "tradelens-startpage-visibility-fix",
       "tradelens-overview-spacing-fix-v3",
-      "tradelens-overview-spacing-fix-v4"
+      "tradelens-overview-spacing-fix-v4",
+      "tradelens-overview-spacing-fix-v7"
     ];
-    for (var i = 0; i < oldIds.length; i++) {
-      var old = document.getElementById(oldIds[i]);
+    for (var i = 0; i < ids.length; i++) {
+      var old = document.getElementById(ids[i]);
       if (old && old.parentNode) old.parentNode.removeChild(old);
     }
 
     var style = document.createElement("style");
-    style.id = "tradelens-overview-spacing-fix-v4";
+    style.id = "tradelens-overview-spacing-fix-v7";
     style.textContent = [
       "#page-overview,#page-uebersicht,#page-dashboard{",
-      "  padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;",
-      "  scroll-padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;",
+      "padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;",
+      "scroll-padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;",
       "}",
       "#page-overview::after,#page-uebersicht::after,#page-dashboard::after{",
-      "  content:none!important;display:none!important;height:0!important;",
+      "content:none!important;display:none!important;height:0!important;",
       "}",
       "#page-overview .card:last-of-type,#page-overview .gf:last-of-type,",
       "#page-uebersicht .card:last-of-type,#page-uebersicht .gf:last-of-type,",
       "#page-dashboard .card:last-of-type,#page-dashboard .gf:last-of-type{",
-      "  margin-bottom:0!important;",
+      "margin-bottom:0!important;",
       "}"
     ].join("\n");
     document.head.appendChild(style);
@@ -61,22 +55,24 @@ window.TRADELENS_CONFIG = {
       return;
     }
 
-    var existing = document.querySelector("script[data-tl-market-bootstrap]");
-    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+    var oldScripts = document.querySelectorAll("script[data-tl-market-bootstrap],script[data-tl-market]");
+    for (var i = 0; i < oldScripts.length; i++) {
+      if (oldScripts[i].parentNode) oldScripts[i].parentNode.removeChild(oldScripts[i]);
+    }
 
     var script = document.createElement("script");
-    script.src = "tradelens-market.js?v=20260618h&t=" + Date.now();
+    script.src = "tradelens-market-v7.js?v=20260618k&t=" + Date.now();
     script.async = true;
-    script.setAttribute("data-tl-market-bootstrap", "true");
+    script.setAttribute("data-tl-market-bootstrap", "v7");
     script.onload = function () {
-      document.documentElement.setAttribute("data-tl-market-loader", "loaded");
+      document.documentElement.setAttribute("data-tl-market-loader", "v7-loaded");
       if (window.TLMarket && typeof window.TLMarket.refresh === "function") {
         window.TLMarket.refresh();
       }
     };
     script.onerror = function () {
-      document.documentElement.setAttribute("data-tl-market-loader", "error");
-      console.error("[TradeLens] tradelens-market.js konnte nicht geladen werden.");
+      document.documentElement.setAttribute("data-tl-market-loader", "v7-error");
+      console.error("[TradeLens] Marktdaten-Modul konnte nicht geladen werden.");
     };
     document.head.appendChild(script);
   }
