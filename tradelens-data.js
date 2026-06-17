@@ -195,7 +195,7 @@
 (function loadTradeLensMarketModule() {
   if (document.querySelector('script[data-tl-market]')) return;
   var script = document.createElement('script');
-  script.src = 'tradelens-market.js?v=20260617a';
+  script.src = 'tradelens-market.js?v=20260618b';
   script.async = false;
   script.setAttribute('data-tl-market', 'true');
   document.head.appendChild(script);
