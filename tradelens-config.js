@@ -52,5 +52,11 @@ window.TRADELENS_CONFIG = {
      Aktuell in Supabase veröffentlicht als "smooth-endpoint"
      (Quellcode im Repo: supabase/functions/analyze-chart).
      ------------------------------------------------------------------- */
-  ANALYZE_FUNCTION: "smooth-endpoint"
+  ANALYZE_FUNCTION: "smooth-endpoint",
+
+  /* -------------------------------------------------------------------
+     Slug der Edge Function für echte Marktdaten über Twelve Data.
+     Der geheime TWELVE_DATA_API_KEY bleibt ausschließlich in Supabase.
+     ------------------------------------------------------------------- */
+  MARKET_DATA_FUNCTION: "market-data"
 };

@@ -1,23 +1,26 @@
 /* =====================================================================
    TradeLens AI – Live-Marktdaten auf der Startseite
    ---------------------------------------------------------------------
-   - Ruft ausschliesslich die Supabase Edge Function "market-data" auf.
+   - Ruft ausschließlich die Supabase Edge Function "market-data" auf.
    - Der Twelve-Data-Key bleibt serverseitig und erscheint nie im Browser.
-   - Zeigt XAUUSD-Livepreis sowie R1/R2/S1/S2 aus klassischen Tages-Pivots.
+   - Verwendet echte XAU/USD-M15-Kerzen für Preis und klassische M15-Pivots.
+   - Unterstützt zusätzlich das ältere Serverformat mit fertigen Pivot-Zonen.
    - Bei Fehlern bleiben ehrliche Striche/Statusmeldungen statt Fake-Werten.
    ===================================================================== */
 (function () {
   "use strict";
 
   var CFG = window.TRADELENS_CONFIG || {};
-  var ENDPOINT = (CFG.SUPABASE_URL || "").replace(/\/+$/, "") + "/functions/v1/market-data";
-  var CACHE_KEY = "tradelens_market_xauusd_v1";
-  var REFRESH_MS = 60000;
-  var MAX_CACHE_AGE = 10 * 60 * 1000;
+  var FUNCTION_SLUG = CFG.MARKET_DATA_FUNCTION || "market-data";
+  var ENDPOINT = (CFG.SUPABASE_URL || "").replace(/\/+$/, "") + "/functions/v1/" + FUNCTION_SLUG;
+  var CACHE_KEY = "tradelens_market_xauusd_m15_v2";
+  var REFRESH_MS = 5 * 60 * 1000;
+  var MAX_CACHE_AGE = 15 * 60 * 1000;
   var lastPayload = null;
   var refreshTimer = null;
   var observerTimer = null;
   var started = false;
+  var loading = false;
 
   function norm(value) {
     return String(value || "")
@@ -69,9 +72,18 @@
     return true;
   }
 
-  function formatPrice(value) {
+  function finiteNumber(value) {
     var n = Number(value);
-    if (!Number.isFinite(n)) return "—";
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function round2(value) {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  }
+
+  function formatPrice(value) {
+    var n = finiteNumber(value);
+    if (n == null) return "—";
     try {
       return new Intl.NumberFormat("de-DE", {
         minimumFractionDigits: 2,
@@ -104,33 +116,90 @@
     return status;
   }
 
-  function updateHeading(card) {
+  function updateHeading(card, interval) {
     if (!card) return;
     var labels = card.querySelectorAll(".label,h2,h3");
     for (var i = 0; i < labels.length; i++) {
       if (norm(labels[i].textContent).indexOf("WICHTIGE ZONEN") >= 0) {
-        labels[i].textContent = "WICHTIGE ZONEN – XAUUSD";
+        labels[i].textContent = "WICHTIGE ZONEN – XAUUSD" + (interval ? " · " + interval : "");
         break;
       }
     }
   }
 
+  function classicPivots(high, low, close) {
+    high = finiteNumber(high);
+    low = finiteNumber(low);
+    close = finiteNumber(close);
+    if (high == null || low == null || close == null || high <= low) return null;
+    var pivot = (high + low + close) / 3;
+    return {
+      resistance_2: round2(pivot + (high - low)),
+      resistance_1: round2(2 * pivot - low),
+      pivot: round2(pivot),
+      support_1: round2(2 * pivot - high),
+      support_2: round2(pivot - (high - low))
+    };
+  }
+
+  function normalizePayload(payload) {
+    if (!payload || payload.ok !== true) return null;
+
+    // Älteres Serverformat: Pivot-Zonen werden bereits von der Function geliefert.
+    if (payload.zones && finiteNumber(payload.price) != null) {
+      return {
+        ok: true,
+        price: finiteNumber(payload.price),
+        zones: payload.zones,
+        interval: payload.interval || "D1",
+        quote_datetime: payload.quote_datetime || null,
+        basis_datetime: payload.basis_date || null,
+        updated_at: payload.updated_at || new Date().toISOString(),
+        source: payload.source || "Twelve Data"
+      };
+    }
+
+    // Aktuell deploytes Format: neueste Kerze + Kerzenliste.
+    var latest = payload.latest || null;
+    var candles = Array.isArray(payload.candles) ? payload.candles : [];
+    var currentPrice = latest ? finiteNumber(latest.close) : null;
+    if (currentPrice == null || candles.length < 2) return null;
+
+    // candles[0] kann noch laufen. Die letzte abgeschlossene M15-Kerze ist candles[1].
+    var basis = candles[1] || candles[0];
+    var zones = classicPivots(basis.high, basis.low, basis.close);
+    if (!zones) return null;
+
+    return {
+      ok: true,
+      price: currentPrice,
+      zones: zones,
+      interval: payload.interval === "15min" ? "M15" : String(payload.interval || "M15").toUpperCase(),
+      quote_datetime: latest.datetime || null,
+      basis_datetime: basis.datetime || null,
+      updated_at: payload.fetched_at || new Date().toISOString(),
+      source: payload.provider === "twelve_data" ? "Twelve Data" : (payload.provider || "Twelve Data")
+    };
+  }
+
   function renderPayload(payload, cached) {
-    if (!payload || !payload.ok || !payload.zones) return false;
+    var normalized = normalizePayload(payload);
+    if (!normalized) return false;
     var card = findZonesCard();
     if (!card) return false;
 
-    updateHeading(card);
-    setRowValue(card, ["WIDERSTAND 2", "RESISTANCE 2", "R2"], formatPrice(payload.zones.resistance_2));
-    setRowValue(card, ["WIDERSTAND 1", "RESISTANCE 1", "R1"], formatPrice(payload.zones.resistance_1));
-    setRowValue(card, ["AKTUELLER PREIS", "AKTUELL", "CURRENT PRICE"], formatPrice(payload.price));
-    setRowValue(card, ["UNTERSTUTZUNG 1", "SUPPORT 1", "S1"], formatPrice(payload.zones.support_1));
-    setRowValue(card, ["UNTERSTUTZUNG 2", "SUPPORT 2", "S2"], formatPrice(payload.zones.support_2));
+    updateHeading(card, normalized.interval);
+    setRowValue(card, ["WIDERSTAND 2", "RESISTANCE 2", "R2"], formatPrice(normalized.zones.resistance_2));
+    setRowValue(card, ["WIDERSTAND 1", "RESISTANCE 1", "R1"], formatPrice(normalized.zones.resistance_1));
+    setRowValue(card, ["AKTUELLER PREIS", "AKTUELL", "CURRENT PRICE"], formatPrice(normalized.price));
+    setRowValue(card, ["UNTERSTUTZUNG 1", "SUPPORT 1", "S1"], formatPrice(normalized.zones.support_1));
+    setRowValue(card, ["UNTERSTUTZUNG 2", "SUPPORT 2", "S2"], formatPrice(normalized.zones.support_2));
 
     var status = ensureStatus(card);
     if (status) {
-      status.textContent = (cached ? "Zuletzt geladen" : "LIVE") + " · XAUUSD · " + formatTime(payload.updated_at);
+      status.textContent = (cached ? "ZULETZT GELADEN" : "LIVE") + " · XAUUSD " + normalized.interval + " · " + formatTime(normalized.updated_at);
       status.style.color = cached ? "var(--txt-3)" : "var(--green)";
+      status.title = "Quelle: " + normalized.source + (normalized.basis_datetime ? " · Pivotbasis: " + normalized.basis_datetime : "");
     }
     return true;
   }
@@ -138,7 +207,7 @@
   function renderLoading() {
     var card = findZonesCard();
     if (!card) return;
-    updateHeading(card);
+    updateHeading(card, "M15");
     var status = ensureStatus(card);
     if (status) {
       status.textContent = "Live-Marktdaten werden geladen …";
@@ -149,7 +218,7 @@
   function renderError(code) {
     var card = findZonesCard();
     if (!card) return;
-    updateHeading(card);
+    updateHeading(card, "M15");
     if (!lastPayload) {
       setRowValue(card, ["WIDERSTAND 2", "RESISTANCE 2", "R2"], "—");
       setRowValue(card, ["WIDERSTAND 1", "RESISTANCE 1", "R1"], "—");
@@ -160,8 +229,12 @@
     var status = ensureStatus(card);
     if (status) {
       var text = code === "function_not_deployed"
-        ? "Live-Datenfunktion muss noch veröffentlicht werden"
-        : "Live-Marktdaten aktuell nicht verfügbar";
+        ? "Live-Datenfunktion market-data ist nicht erreichbar"
+        : code === "unauthorized"
+          ? "Sitzung abgelaufen – bitte erneut anmelden"
+          : code === "provider_error" || code === "rate_limited"
+            ? "Marktdaten-Limit erreicht – später erneut versuchen"
+            : "Live-Marktdaten aktuell nicht verfügbar";
       status.textContent = text;
       status.style.color = "var(--red)";
     }
@@ -195,10 +268,13 @@
   }
 
   function loadLive() {
+    if (loading) return Promise.resolve(lastPayload);
     if (!ENDPOINT || ENDPOINT.indexOf("https://") !== 0) {
       renderError("not_configured");
       return Promise.resolve(null);
     }
+
+    loading = true;
     renderLoading();
     return getToken().then(function (token) {
       if (!token) throw new Error("unauthorized");
@@ -209,14 +285,22 @@
           "apikey": CFG.SUPABASE_ANON_KEY || "",
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ symbol: "XAU/USD" })
+        body: JSON.stringify({
+          symbol: "XAU/USD",
+          interval: "15min",
+          outputsize: 20
+        })
       });
     }).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (body) {
-        if (!response.ok || !body || !body.ok) {
-          var code = response.status === 404 ? "function_not_deployed" : (body.error_code || "market_error");
+        if (!response.ok || !body || body.ok !== true) {
+          var serverCode = body && (body.error || body.error_code);
+          var code = response.status === 404 ? "function_not_deployed"
+            : response.status === 429 ? "rate_limited"
+              : serverCode || "market_error";
           throw new Error(code);
         }
+        if (!normalizePayload(body)) throw new Error("market_data_incomplete");
         return body;
       });
     }).then(function (payload) {
@@ -225,9 +309,16 @@
       renderPayload(payload, false);
       return payload;
     }).catch(function (error) {
-      console.warn("[TLMarket] Live-Daten:", error && error.message ? error.message : "market_error");
+      var code = error && error.message ? error.message : "market_error";
+      console.warn("[TLMarket] Live-Daten:", code);
       if (lastPayload) renderPayload(lastPayload, true);
-      else renderError(error && error.message ? error.message : "market_error");
+      else renderError(code);
+      return null;
+    }).then(function (result) {
+      loading = false;
+      return result;
+    }, function () {
+      loading = false;
       return null;
     });
   }
@@ -246,7 +337,8 @@
   function schedule() {
     clearInterval(refreshTimer);
     refreshTimer = setInterval(function () {
-      if (!document.hidden) loadLive();
+      var page = overviewPage();
+      if (!document.hidden && (!page || page.classList.contains("active"))) loadLive();
     }, REFRESH_MS);
   }
 
@@ -255,7 +347,7 @@
     started = true;
 
     var cached = readCache();
-    if (cached) {
+    if (cached && normalizePayload(cached)) {
       lastPayload = cached;
       renderPayload(cached, true);
     }
@@ -267,13 +359,15 @@
     }, 450);
 
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) loadLive();
+      var page = overviewPage();
+      if (!document.hidden && (!page || page.classList.contains("active"))) loadLive();
     });
   }
 
   window.TLMarket = {
     refresh: loadLive,
-    render: function () { return lastPayload ? renderPayload(lastPayload, true) : false; }
+    render: function () { return lastPayload ? renderPayload(lastPayload, true) : false; },
+    normalize: normalizePayload
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
