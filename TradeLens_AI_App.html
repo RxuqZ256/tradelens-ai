@@ -2566,6 +2566,12 @@ body.analysis-loading-active .home-ind{display:none!important}
 .bottomnav .nav{pointer-events:auto!important}
 .bottomnav::before,.bottomnav::after{pointer-events:none!important}
 .home-ind{pointer-events:none!important}
+/* JS-gesteuerte Navigation hat Vorrang vor dem :target-Quick-Look-Fallback.
+   history.replaceState aktualisiert :target NICHT – ohne diese Regeln würde eine
+   veraltete :target-Seite den per .active geöffneten Ladebildschirm verdecken.
+   Das :not(#_) hebt die Spezifität über die bestehenden :has(.page:target)-Regeln. */
+body.nav-js .page.active:not(#_){opacity:1!important;visibility:visible!important;transform:none!important;pointer-events:auto!important;z-index:20!important}
+body.nav-js .page:not(.active):not(#_){opacity:0!important;visibility:hidden!important;pointer-events:none!important}
 </style>
 <section class="page" id="page-analysis-loading">
 <div class="appbar">
@@ -3604,6 +3610,7 @@ var AN={uploadId:null,storagePath:null,payload:null,status:null,busy:false,cance
    Sichtbarkeit direkt über .active, räumt blockierende Inline-Styles/Attribute
    weg und entfernt erst danach einen Hash – unabhängig von :target/Anchor. */
 function openInternalPage(pageId){
+  document.body.classList.add('nav-js');   // ab jetzt steuert JS die Sichtbarkeit (Vorrang vor :target)
   var pages=document.querySelectorAll('.page');
   for(var i=0;i<pages.length;i++){pages[i].classList.remove('active');}
   var el=document.getElementById(pageId);
