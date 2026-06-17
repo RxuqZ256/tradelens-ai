@@ -60,18 +60,3 @@ window.TRADELENS_CONFIG = {
      ------------------------------------------------------------------- */
   MARKET_DATA_FUNCTION: "market-data"
 };
-
-/* Live-Marktdaten-Modul nur innerhalb der eigentlichen App nachladen.
-   Das Modul wartet selbstständig, bis DOM und Supabase verfügbar sind. */
-(function () {
-  "use strict";
-  var cfg = window.TRADELENS_CONFIG || {};
-  var current = (window.location.pathname || "").split("/").pop();
-  if (current && cfg.APP_FILE && current !== cfg.APP_FILE) return;
-  if (document.querySelector("script[data-tl-market-data]")) return;
-  var script = document.createElement("script");
-  script.src = "tradelens-market-data.js?v=20260617a";
-  script.async = false;
-  script.setAttribute("data-tl-market-data", "true");
-  document.head.appendChild(script);
-})();
