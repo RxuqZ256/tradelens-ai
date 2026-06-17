@@ -60,3 +60,66 @@ window.TRADELENS_CONFIG = {
      ------------------------------------------------------------------- */
   MARKET_DATA_FUNCTION: "market-data"
 };
+
+/* =====================================================================
+   App-Bootstrap für Live-Marktdaten
+   ---------------------------------------------------------------------
+   Diese Konfigurationsdatei wird garantiert von Login und App geladen.
+   Deshalb starten wir das Marktdaten-Modul hier direkt für die App-Seite,
+   statt uns auf eine optionale spätere Datei zu verlassen.
+   ===================================================================== */
+(function bootTradeLensMarketData() {
+  "use strict";
+
+  var cfg = window.TRADELENS_CONFIG || {};
+  var file = (window.location.pathname || "").split("/").pop();
+  if (file !== (cfg.APP_FILE || "TradeLens_AI_App.html")) return;
+
+  function mount() {
+    var styleId = "tradelens-overview-spacing-fix-v3";
+    if (!document.getElementById(styleId)) {
+      var style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = [
+        "#page-overview,#page-uebersicht,#page-dashboard{",
+        "  padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;",
+        "  scroll-padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;",
+        "}",
+        "#page-overview::after,#page-uebersicht::after,#page-dashboard::after{",
+        "  content:none!important;display:none!important;height:0!important;",
+        "}",
+        "#page-overview .card:last-of-type,#page-overview .gf:last-of-type,",
+        "#page-uebersicht .card:last-of-type,#page-uebersicht .gf:last-of-type,",
+        "#page-dashboard .card:last-of-type,#page-dashboard .gf:last-of-type{",
+        "  margin-bottom:0!important;",
+        "}"
+      ].join("\n");
+      document.head.appendChild(style);
+    }
+
+    if (window.TLMarket && typeof window.TLMarket.refresh === "function") {
+      window.TLMarket.refresh();
+      return;
+    }
+
+    var existing = document.querySelector("script[data-tl-market-bootstrap]");
+    if (existing) return;
+
+    var script = document.createElement("script");
+    script.src = "tradelens-market.js?v=20260618e&t=" + Date.now();
+    script.async = true;
+    script.setAttribute("data-tl-market-bootstrap", "true");
+    script.onload = function () {
+      if (window.TLMarket && typeof window.TLMarket.refresh === "function") {
+        window.TLMarket.refresh();
+      }
+    };
+    script.onerror = function () {
+      console.error("[TradeLens] tradelens-market.js konnte nicht geladen werden.");
+    };
+    document.head.appendChild(script);
+  }
+
+  if (document.readyState === "complete") mount();
+  else window.addEventListener("load", mount, { once: true });
+})();
