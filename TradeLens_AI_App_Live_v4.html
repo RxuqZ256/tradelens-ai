@@ -10,9 +10,27 @@
   </style>
 </head>
 <body>
-  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618ad"></iframe>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618ae"></iframe>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="tradelens-live-combined-v1.js?v=20260618ad"></script>
-  <script src="tradelens-briefing-overlay-v2.js?v=20260618ad"></script>
+  <script src="tradelens-live-combined-v1.js?v=20260618ae"></script>
+  <script>
+  (function(){
+    var frame=document.getElementById('app');
+    function injectNativeBriefing(){
+      try{
+        var doc=frame.contentDocument||frame.contentWindow.document;
+        if(!doc||!doc.head||doc.getElementById('tl-native-briefing-script'))return;
+        var script=doc.createElement('script');
+        script.id='tl-native-briefing-script';
+        script.src='tradelens-briefing-native.js?v=20260618ae';
+        doc.head.appendChild(script);
+      }catch(error){
+        setTimeout(injectNativeBriefing,500);
+      }
+    }
+    frame.addEventListener('load',function(){setTimeout(injectNativeBriefing,50);});
+    setTimeout(injectNativeBriefing,400);
+  })();
+  </script>
 </body>
 </html>
