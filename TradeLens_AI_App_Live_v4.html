@@ -10,26 +10,36 @@
   </style>
 </head>
 <body>
-  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618ae"></iframe>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618ag"></iframe>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="tradelens-live-combined-v1.js?v=20260618ae"></script>
+  <script src="tradelens-live-combined-v1.js?v=20260618ag"></script>
   <script>
   (function(){
     var frame=document.getElementById('app');
-    function injectNativeBriefing(){
+    function injectBriefingScripts(){
       try{
         var doc=frame.contentDocument||frame.contentWindow.document;
-        if(!doc||!doc.head||doc.getElementById('tl-native-briefing-script'))return;
-        var script=doc.createElement('script');
-        script.id='tl-native-briefing-script';
-        script.src='tradelens-briefing-native.js?v=20260618ae';
-        doc.head.appendChild(script);
+        if(!doc||!doc.head){setTimeout(injectBriefingScripts,500);return;}
+
+        if(!doc.getElementById('tl-native-briefing-script')){
+          var nativeScript=doc.createElement('script');
+          nativeScript.id='tl-native-briefing-script';
+          nativeScript.src='tradelens-briefing-native.js?v=20260618ag';
+          doc.head.appendChild(nativeScript);
+        }
+
+        if(!doc.getElementById('tl-briefing-live-bind-script')){
+          var bindScript=doc.createElement('script');
+          bindScript.id='tl-briefing-live-bind-script';
+          bindScript.src='tradelens-briefing-live-bind.js?v=20260618ag';
+          doc.head.appendChild(bindScript);
+        }
       }catch(error){
-        setTimeout(injectNativeBriefing,500);
+        setTimeout(injectBriefingScripts,500);
       }
     }
-    frame.addEventListener('load',function(){setTimeout(injectNativeBriefing,50);});
-    setTimeout(injectNativeBriefing,400);
+    frame.addEventListener('load',function(){setTimeout(injectBriefingScripts,50);});
+    setTimeout(injectBriefingScripts,400);
   })();
   </script>
 </body>
