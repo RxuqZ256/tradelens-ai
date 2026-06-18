@@ -7,95 +7,128 @@
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020617}
     #app{display:block;width:100%;height:100dvh;border:0;background:#020617}
-    #boot-status{position:fixed;right:10px;bottom:10px;z-index:9999;padding:6px 9px;border-radius:10px;background:rgba(2,6,23,.86);border:1px solid rgba(0,229,255,.28);color:#94a3b8;font:600 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:none}
+    #boot-status{position:fixed;right:10px;bottom:10px;z-index:9999;padding:7px 10px;border-radius:10px;background:rgba(2,6,23,.9);border:1px solid rgba(0,229,255,.28);color:#94a3b8;font:600 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:none;max-width:75vw}
     #boot-status.ok{color:#22c55e;border-color:rgba(34,197,94,.35)}
+    #boot-status.warn{color:#fbbf24;border-color:rgba(251,191,36,.4)}
     #boot-status.err{color:#fb7185;border-color:rgba(251,113,133,.4)}
   </style>
 </head>
 <body>
-  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?live_wrapper=20260618p"></iframe>
-  <div id="boot-status">Live-Modul wird vorbereitet …</div>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?direct_live=20260618q"></iframe>
+  <div id="boot-status">Live-Daten werden vorbereitet …</div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
   (function(){
     "use strict";
+
+    var SUPABASE_URL="https://afdletrvfhfmcuhlisqq.supabase.co";
+    var SUPABASE_KEY="sb_publishable_xge0UxBMeTeyvs0NcrGbuw_UzG6LkpY";
     var frame=document.getElementById("app");
     var badge=document.getElementById("boot-status");
+    var client=null;
 
-    function status(text,type){
-      badge.textContent=text;
-      badge.className=type||"";
+    var defs=[
+      {label:"XAUUSD",symbols:["XAU/USD"],outputsize:20},
+      {label:"EURUSD",symbols:["EUR/USD"],outputsize:3},
+      {label:"BTCUSD",symbols:["BTC/USD"],outputsize:3},
+      {label:"NAS100",symbols:["NDX","QQQ","IXIC"],outputsize:3}
+    ];
+
+    function setBadge(text,type){badge.textContent=text;badge.className=type||"";}
+    function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
+    function num(v){var n=Number(v);return Number.isFinite(n)?n:null;}
+    function norm(v){var s=String(v||"").toUpperCase();try{s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){}return s.replace(/[–—]/g,"-").replace(/\s+/g," ").trim();}
+    function formatPrice(v){var n=num(v);if(n==null)return"—";return new Intl.NumberFormat("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
+    function formatPct(v){var n=num(v);if(n==null)return"—";return(n>0?"+":"")+n.toFixed(2).replace(".",",")+"%";}
+
+    function appDoc(){return frame.contentDocument||(frame.contentWindow&&frame.contentWindow.document)||null;}
+    function root(doc){return doc.getElementById("page-overview")||doc.getElementById("page-uebersicht")||doc.getElementById("page-dashboard")||doc;}
+
+    function moverRow(doc,label){
+      var rows=root(doc).querySelectorAll(".mover");
+      for(var i=0;i<rows.length;i++){
+        var sym=rows[i].querySelector(".sym");
+        if(sym&&norm(sym.textContent)===label)return rows[i];
+      }
+      return null;
     }
 
-    function addScript(doc,src,onload,onerror,marker){
-      var s=doc.createElement("script");
-      s.src=src;
-      s.async=true;
-      if(marker)s.setAttribute(marker,"true");
-      s.onload=onload||null;
-      s.onerror=onerror||null;
-      doc.head.appendChild(s);
-      return s;
+    function zoneRow(doc,label){
+      var rows=root(doc).querySelectorAll(".zr");
+      for(var i=0;i<rows.length;i++){
+        var lbl=rows[i].querySelector(".lbl");
+        if(lbl&&norm(lbl.textContent)===label)return rows[i];
+      }
+      return null;
     }
 
-    function injectMarket(win,doc){
-      win.TRADELENS_CONFIG={
-        APP_MODE:"production",
-        SUPABASE_URL:"https://afdletrvfhfmcuhlisqq.supabase.co",
-        SUPABASE_ANON_KEY:"sb_publishable_xge0UxBMeTeyvs0NcrGbuw_UzG6LkpY",
-        REDIRECT_URL:"https://rxuqz256.github.io/tradelens-ai/index.html",
-        LOGIN_FILE:"index.html",
-        APP_FILE:"TradeLens_AI_App.html",
-        SUPABASE_JS_CDN:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
-        ANALYZE_FUNCTION:"smooth-endpoint",
-        MARKET_DATA_FUNCTION:"market-data"
-      };
+    function setMover(doc,label,value,positive){
+      var row=moverRow(doc,label);var target=row&&row.querySelector(".pct");
+      if(!target)return false;
+      target.textContent=value;target.classList.remove("pos","neg");target.classList.add(positive?"pos":"neg");return true;
+    }
 
-      var style=doc.createElement("style");
-      style.textContent="#page-overview,#page-uebersicht,#page-dashboard{padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;scroll-padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}#page-overview::after,#page-uebersicht::after,#page-dashboard::after{content:none!important;display:none!important;height:0!important}";
-      doc.head.appendChild(style);
+    function setZone(doc,label,value){
+      var row=zoneRow(doc,label);var target=row&&row.querySelector(".val");
+      if(!target)return false;target.textContent=value;return true;
+    }
 
-      var old=doc.querySelectorAll("script[data-tl-market-bootstrap],script[data-tl-market],script[data-live-wrapper-market]");
-      for(var i=0;i<old.length;i++){if(old[i].parentNode)old[i].parentNode.removeChild(old[i]);}
-      try{win.TLMarket=null;}catch(_e){}
+    function setHeading(doc){
+      var row=zoneRow(doc,"AKTUELLER PREIS");var card=row&&row.closest?row.closest(".gf,.card"):null;if(!card)return;
+      var labels=card.querySelectorAll(".label,h2,h3");
+      for(var i=0;i<labels.length;i++)if(norm(labels[i].textContent).indexOf("WICHTIGE ZONEN")>=0){labels[i].textContent="WICHTIGE ZONEN – XAUUSD · M15";break;}
+    }
 
-      addScript(
-        doc,
-        "tradelens-market-v7.js?live_wrapper=20260618p&t="+Date.now(),
-        function(){
-          status("Live-Modul geladen","ok");
-          if(win.TLMarket&&typeof win.TLMarket.refresh==="function")win.TLMarket.refresh();
-          setTimeout(function(){badge.style.display="none";},2500);
-        },
-        function(){status("Live-Modul konnte nicht geladen werden","err");},
-        "data-live-wrapper-market"
-      );
+    function ensureStatus(doc,card,attr){
+      if(!card)return null;var node=card.querySelector("["+attr+"]");if(node)return node;
+      node=doc.createElement("div");node.setAttribute(attr,"true");node.style.cssText="margin-top:8px;padding-top:7px;border-top:1px solid rgba(96,165,250,.12);text-align:center;font-size:10px;color:var(--txt-3)";(card.querySelector(".in")||card).appendChild(node);return node;
+    }
+
+    function setCardStatus(doc,type,text,color){
+      var row=type==="zone"?zoneRow(doc,"AKTUELLER PREIS"):moverRow(doc,"XAUUSD");var card=row&&row.closest?row.closest(".gf,.card"):null;
+      var node=ensureStatus(doc,card,type==="zone"?"data-direct-zone-status":"data-direct-mover-status");if(node){node.textContent=text;node.style.color=color||"var(--txt-3)";}
+    }
+
+    function moverChange(payload){
+      var candles=payload&&Array.isArray(payload.candles)?payload.candles:[];var latest=payload&&(payload.latest||candles[0]);var previous=candles[1];var a=latest?num(latest.close):null;var b=previous?num(previous.close):null;if(a==null||b==null||b===0)return null;return((a-b)/b)*100;
+    }
+
+    function pivots(candle){
+      if(!candle)return null;var h=num(candle.high),l=num(candle.low),c=num(candle.close);if(h==null||l==null||c==null||h<=l)return null;var p=(h+l+c)/3;return{r2:p+h-l,r1:2*p-l,s1:2*p-h,s2:p-h+l};
+    }
+
+    function renderXau(doc,payload){
+      var candles=payload&&Array.isArray(payload.candles)?payload.candles:[];var latest=payload&&(payload.latest||candles[0]);var current=latest?num(latest.close):null;var levels=pivots(candles[1]||candles[0]);var change=moverChange(payload);
+      setHeading(doc);
+      if(current!=null&&levels){setZone(doc,"WIDERSTAND 2",formatPrice(levels.r2));setZone(doc,"WIDERSTAND 1",formatPrice(levels.r1));setZone(doc,"AKTUELLER PREIS",formatPrice(current));setZone(doc,"UNTERSTUTZUNG 1",formatPrice(levels.s1));setZone(doc,"UNTERSTUTZUNG 2",formatPrice(levels.s2));setCardStatus(doc,"zone","LIVE · TWELVE DATA","var(--green)");}
+      if(change!=null)setMover(doc,"XAUUSD",formatPct(change),change>=0);
+      return current!=null||change!=null;
+    }
+
+    function renderMover(doc,label,payload){var change=moverChange(payload);if(change==null)return false;return setMover(doc,label,formatPct(change),change>=0);}
+
+    function invoke(symbol,outputsize){
+      return client.functions.invoke("market-data",{body:{symbol:symbol,interval:"15min",outputsize:outputsize}}).then(function(result){if(result.error)throw result.error;if(!result.data||result.data.ok!==true)throw new Error((result.data&&result.data.error)||"invalid_response");return result.data;});
+    }
+
+    function invokeDef(def){
+      var index=0;function next(){var symbol=def.symbols[index++];return invoke(symbol,def.outputsize).then(function(payload){if(moverChange(payload)==null)throw new Error("missing_candles");return{payload:payload,symbol:symbol};}).catch(function(error){if(index<def.symbols.length)return wait(1600).then(next);throw error;});}return next();
     }
 
     function boot(){
-      try{
-        var win=frame.contentWindow;
-        var doc=frame.contentDocument||win.document;
-        if(!doc||!doc.head){status("App-Dokument nicht erreichbar","err");return;}
+      var doc=appDoc();if(!doc||!doc.body){setBadge("App-Dokument nicht erreichbar","err");return;}
+      if(!window.supabase||!window.supabase.createClient){setBadge("Supabase-Bibliothek fehlt","err");return;}
+      client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:"tradelens_auth"}});
 
-        status("Supabase wird geprüft …");
-        if(win.supabase&&win.supabase.createClient){
-          injectMarket(win,doc);
-          return;
-        }
+      var style=doc.createElement("style");style.textContent="#page-overview,#page-uebersicht,#page-dashboard{padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;scroll-padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}#page-overview::after,#page-uebersicht::after,#page-dashboard::after{content:none!important;display:none!important;height:0!important}";doc.head.appendChild(style);
+      setHeading(doc);setCardStatus(doc,"zone","VERBINDUNG WIRD GETESTET …","var(--cyan)");setCardStatus(doc,"mover","LADE XAUUSD · 1/4","var(--cyan)");
 
-        addScript(
-          doc,
-          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
-          function(){injectMarket(win,doc);},
-          function(){status("Supabase-Bibliothek konnte nicht geladen werden","err");},
-          "data-live-wrapper-supabase"
-        );
-      }catch(error){
-        status("Live-Start fehlgeschlagen","err");
-      }
+      var success=0;var lastError=null;var chain=Promise.resolve();
+      defs.forEach(function(def,pos){chain=chain.then(function(){if(pos)return wait(1600);}).then(function(){setBadge("Lade "+def.label+" · "+(pos+1)+"/4");setCardStatus(doc,"mover","LADE "+def.label+" · "+(pos+1)+"/4","var(--cyan)");return invokeDef(def);}).then(function(result){if(def.label==="XAUUSD"){if(renderXau(doc,result.payload))success++;}else if(renderMover(doc,def.label,result.payload))success++;setCardStatus(doc,"mover","GELADEN · "+success+"/4",success===4?"var(--green)":"var(--gold)");}).catch(function(error){lastError=error;setCardStatus(doc,"mover","FEHLER "+def.label+" · "+String(error&&error.message||error).slice(0,50),"var(--red)");});});
+      chain.then(function(){if(success>0){setBadge("Live-Daten geladen · "+success+"/4",success===4?"ok":"warn");setCardStatus(doc,"mover",success===4?"LIVE · M15 · TWELVE DATA":"TEILWEISE GELADEN · "+success+"/4",success===4?"var(--green)":"var(--gold)");}else{var msg=String(lastError&&lastError.message||lastError||"unbekannter Fehler");setBadge("Keine Werte · "+msg.slice(0,60),"err");setCardStatus(doc,"zone","FEHLER · "+msg.slice(0,60),"var(--red)");setCardStatus(doc,"mover","FEHLER · "+msg.slice(0,60),"var(--red)");}});
     }
 
-    frame.addEventListener("load",function(){setTimeout(boot,500);});
+    frame.addEventListener("load",function(){setTimeout(boot,700);});
   })();
   </script>
 </body>
