@@ -10,9 +10,95 @@
   </style>
 </head>
 <body>
-  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618v"></iframe>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618w"></iframe>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="tradelens-live-direct-v3.js?v=20260618v"></script>
-  <script src="tradelens-daily-briefing-v2.js?v=20260618v"></script>
+  <script src="tradelens-live-direct-v3.js?v=20260618w"></script>
+  <script>
+  (function(){
+    "use strict";
+    var frame=document.getElementById("app");
+    var timer=null;
+    var lastSignature="";
+
+    function norm(v){var s=String(v||"").toUpperCase();try{s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){}return s.replace(/[–—]/g,"-").replace(/\s+/g," ").trim();}
+    function num(v){var s=String(v||"").replace(/%/g,"").replace(/\s/g,"").replace(/[^0-9,+\-.]/g,"");if(!s||s==="-"||s==="—")return null;if(s.indexOf(",")>=0)s=s.replace(/\./g,"").replace(",", ".");var n=Number(s);return Number.isFinite(n)?n:null;}
+    function doc(){try{return frame&&(frame.contentDocument||frame.contentWindow.document);}catch(e){return null;}}
+    function dateText(){return new Intl.DateTimeFormat("de-DE",{weekday:"long",day:"2-digit",month:"long",year:"numeric"}).format(new Date());}
+    function pct(v){return(v>0?"+":"")+v.toFixed(2).replace(".",",")+"%";}
+    function price(v){return new Intl.NumberFormat("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}).format(v);}
+
+    function target(d){
+      var direct=d.querySelector(".briefing");
+      if(direct)return direct;
+      var nodes=d.querySelectorAll("h1,h2,h3,.label,button,a,div,span");
+      for(var i=0;i<nodes.length;i++){
+        var t=norm(nodes[i].textContent);
+        if(t==="AI DAILY BRIEFING"||t==="DAILY BRIEFING"){
+          var card=nodes[i].closest?nodes[i].closest(".gf,.card"):null;
+          if(card)return card.querySelector(".in")||card;
+        }
+      }
+      return null;
+    }
+
+    function movers(d){
+      var out={};var rows=d.querySelectorAll(".mover");
+      for(var i=0;i<rows.length;i++){
+        var s=rows[i].querySelector(".sym"),v=rows[i].querySelector(".pct");
+        if(!s||!v)continue;var n=num(v.textContent);if(n!==null)out[norm(s.textContent)]=n;
+      }
+      return out;
+    }
+
+    function zones(d){
+      var out={};var rows=d.querySelectorAll(".zr");
+      for(var i=0;i<rows.length;i++){
+        var l=rows[i].querySelector(".lbl"),v=rows[i].querySelector(".val");
+        if(!l||!v)continue;var n=num(v.textContent);if(n!==null)out[norm(l.textContent)]=n;
+      }
+      return out;
+    }
+
+    function styles(d){
+      if(d.getElementById("tl-inline-briefing-style"))return;
+      var s=d.createElement("style");s.id="tl-inline-briefing-style";
+      s.textContent=".tlb{display:flex;flex-direction:column;gap:11px}.tlb-h{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.tlb-t{font-family:var(--f-disp);font-size:15px;font-weight:700;letter-spacing:1.8px;color:#f8fafc}.tlb-d{font-family:var(--f-body);font-size:11.5px;color:var(--txt-2);margin-top:3px}.tlb-live{font-family:var(--f-disp);font-size:9px;font-weight:700;letter-spacing:1px;color:var(--green);border:1px solid rgba(34,197,94,.34);background:rgba(34,197,94,.08);border-radius:999px;padding:5px 8px;white-space:nowrap}.tlb-s{font-family:var(--f-body);font-size:13px;line-height:1.5;color:#dbeafe}.tlb-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.tlb-c{min-width:0;border:1px solid rgba(96,165,250,.16);background:rgba(8,15,34,.68);border-radius:11px;padding:8px}.tlb-c small{display:block;font-family:var(--f-disp);font-size:8px;letter-spacing:.8px;color:var(--txt-3);text-transform:uppercase;white-space:nowrap}.tlb-c strong{display:block;font-family:var(--f-body);font-size:12px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tlb-c strong.pos{color:var(--green-2)}.tlb-c strong.neg{color:var(--red)}.tlb-f{border-left:2px solid var(--cyan);background:linear-gradient(90deg,rgba(0,229,255,.08),transparent);padding:8px 9px}.tlb-f b{font-family:var(--f-disp);font-size:9px;letter-spacing:1px;color:var(--cyan);text-transform:uppercase}.tlb-f p{font-family:var(--f-body);font-size:12px;line-height:1.43;color:var(--txt-2);margin-top:3px}.tlb-b{display:flex;align-items:center;justify-content:space-between;border:0;background:transparent;color:var(--cyan);font-family:var(--f-disp);font-size:11px;font-weight:700;padding:2px 0;cursor:pointer}";
+      d.head.appendChild(s);
+    }
+
+    function openAnalysis(d){var c=d.querySelectorAll("button,a,[role='button'],.nav-item,.tab");for(var i=0;i<c.length;i++){if(norm(c[i].textContent)==="ANALYSE"){c[i].click();return;}}}
+
+    function render(){
+      var d=doc();if(!d||!d.body||!d.head)return;var box=target(d);if(!box)return;styles(d);
+      var m=movers(d),z=zones(d),keys=Object.keys(m);
+      var ready=keys.length===4&&z["AKTUELLER PREIS"]!=null&&z["WIDERSTAND 1"]!=null&&z["WIDERSTAND 2"]!=null&&z["UNTERSTUTZUNG 1"]!=null&&z["UNTERSTUTZUNG 2"]!=null;
+
+      if(!ready){
+        if(box.getAttribute("data-inline-daily")!=="loading"){
+          box.setAttribute("data-inline-daily","loading");
+          box.innerHTML="<div class='tlb'><div class='tlb-h'><div><div class='tlb-t'>AI DAILY BRIEFING</div><div class='tlb-d'>"+dateText()+"</div></div><span class='tlb-live'>M15 LIVE</span></div><div class='tlb-s'>Echte Marktdaten werden ausgewertet …</div></div>";
+        }
+        return;
+      }
+
+      var sig=JSON.stringify({m:m,z:z});if(sig===lastSignature&&box.getAttribute("data-inline-daily")==="ready")return;lastSignature=sig;
+      var vals=keys.map(function(k){return m[k];});var pos=vals.filter(function(v){return v>0;}).length;var avg=vals.reduce(function(a,b){return a+b;},0)/vals.length;var strongest=keys[0];for(var i=1;i<keys.length;i++){if(Math.abs(m[keys[i]])>Math.abs(m[strongest]))strongest=keys[i];}
+      var bias="Ausgeglichen",biasClass="";if(avg>0.035&&pos>=3){bias="Risk-on";biasClass="pos";}else if(avg<-0.035&&pos<=1){bias="Defensiv";biasClass="neg";}else if(pos>=3){bias="Leicht positiv";biasClass="pos";}else if(pos<=1){bias="Leicht negativ";biasClass="neg";}
+      var current=z["AKTUELLER PREIS"],r1=z["WIDERSTAND 1"],r2=z["WIDERSTAND 2"],s1=z["UNTERSTUTZUNG 1"],s2=z["UNTERSTUTZUNG 2"];
+      var gl="In der Range",gc="",focus="Gold bewegt sich zwischen Unterstützung 1 bei "+price(s1)+" und Widerstand 1 bei "+price(r1)+".";
+      if(current>r1){gl="Über R1";gc="pos";focus="Gold notiert oberhalb des ersten Widerstands. Der nächste technische Bereich liegt bei "+price(r2)+".";}else if(current<s1){gl="Unter S1";gc="neg";focus="Gold handelt unterhalb der ersten Unterstützung. Die nächste technische Zone liegt bei "+price(s2)+".";}
+      var summary=pos+" von 4 beobachteten Märkten handeln positiv. "+strongest+" zeigt mit "+pct(m[strongest])+" die stärkste M15-Bewegung. Gold steht aktuell bei "+price(current)+".";
+
+      box.setAttribute("data-inline-daily","ready");
+      box.innerHTML="<div class='tlb'><div class='tlb-h'><div><div class='tlb-t'>AI DAILY BRIEFING</div><div class='tlb-d'>"+dateText()+"</div></div><span class='tlb-live'>LIVE VERBUNDEN</span></div><div class='tlb-s'>"+summary+"</div><div class='tlb-g'><div class='tlb-c'><small>Markt-Bias</small><strong class='"+biasClass+"'>"+bias+"</strong></div><div class='tlb-c'><small>Stärkster Markt</small><strong class='"+(m[strongest]>=0?"pos":"neg")+"'>"+strongest+"</strong></div><div class='tlb-c'><small>Gold M15</small><strong class='"+gc+"'>"+gl+"</strong></div></div><div class='tlb-f'><b>Technischer Fokus</b><p>"+focus+"</p></div><button class='tlb-b' type='button'><span>Analyse starten</span><span>›</span></button></div>";
+      var button=box.querySelector(".tlb-b");if(button)button.addEventListener("click",function(){openAnalysis(d);});
+    }
+
+    function boot(){render();clearInterval(timer);timer=setInterval(render,1000);setTimeout(function(){clearInterval(timer);timer=setInterval(render,5000);},30000);}
+    if(!frame)return;
+    try{var d=doc();if(d&&d.readyState!=="loading")setTimeout(boot,100);else frame.addEventListener("load",function(){setTimeout(boot,100);},{once:true});}
+    catch(e){frame.addEventListener("load",function(){setTimeout(boot,100);},{once:true});}
+  })();
+  </script>
 </body>
 </html>
