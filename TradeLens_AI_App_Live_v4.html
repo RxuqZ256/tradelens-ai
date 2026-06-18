@@ -10,9 +10,9 @@
   </style>
 </head>
 <body>
-  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618ag"></iframe>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?text_renderer=20260618ai"></iframe>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="tradelens-live-combined-v1.js?v=20260618ag"></script>
+  <script src="tradelens-live-combined-v1.js?v=20260618ai"></script>
   <script>
   (function(){
     var frame=document.getElementById('app');
@@ -24,14 +24,14 @@
         if(!doc.getElementById('tl-native-briefing-script')){
           var nativeScript=doc.createElement('script');
           nativeScript.id='tl-native-briefing-script';
-          nativeScript.src='tradelens-briefing-native.js?v=20260618ag';
+          nativeScript.src='tradelens-briefing-native.js?v=20260618ai';
           doc.head.appendChild(nativeScript);
         }
 
         if(!doc.getElementById('tl-briefing-live-bind-script')){
           var bindScript=doc.createElement('script');
           bindScript.id='tl-briefing-live-bind-script';
-          bindScript.src='tradelens-briefing-live-bind.js?v=20260618ag';
+          bindScript.src='tradelens-briefing-live-bind.js?v=20260618ai';
           doc.head.appendChild(bindScript);
         }
       }catch(error){

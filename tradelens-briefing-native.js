@@ -2,7 +2,6 @@
   "use strict";
 
   var target=null;
-  var timer=null;
   var PREF_KEY="tradelens_daily_briefing_market_v2";
   var OPTIONS=[
     {value:"XAUUSD",label:"Gold"},
@@ -16,22 +15,6 @@
     var text=String(value||"").toUpperCase();
     try{text=text.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){}
     return text.replace(/[–—]/g,"-").replace(/\s+/g," ").trim();
-  }
-
-  function parse(value){
-    var text=String(value||"").replace(/%/g,"").replace(/\s/g,"").replace(/[^0-9,+\-.]/g,"");
-    if(!text||text==="-"||text==="—")return null;
-    if(text.indexOf(",")>=0)text=text.replace(/\./g,"").replace(",",".");
-    var number=Number(text);
-    return Number.isFinite(number)?number:null;
-  }
-
-  function formatPrice(value){
-    return new Intl.NumberFormat("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
-  }
-
-  function formatPercent(value){
-    return(value>0?"+":"")+value.toFixed(2).replace(".",",")+"%";
   }
 
   function dateText(){
@@ -81,60 +64,50 @@
     return null;
   }
 
-  function readMovers(){
-    var result={};
-    var rows=document.querySelectorAll(".mover");
-    for(var i=0;i<rows.length;i++){
-      var symbol=rows[i].querySelector(".sym");
-      var value=rows[i].querySelector(".pct");
-      if(!symbol||!value)continue;
-      var parsed=parse(value.textContent);
-      if(parsed!==null)result[norm(symbol.textContent)]=parsed;
-    }
-    return result;
-  }
-
-  function readZones(){
-    var result={};
-    var rows=document.querySelectorAll(".zr");
-    for(var i=0;i<rows.length;i++){
-      var label=rows[i].querySelector(".lbl");
-      var value=rows[i].querySelector(".val");
-      if(!label||!value)continue;
-      var parsed=parse(value.textContent);
-      if(parsed!==null)result[norm(label.textContent)]=parsed;
-    }
-    return result;
-  }
-
   function ensureStyles(){
     if(document.getElementById("tl-native-briefing-style"))return;
     var style=document.createElement("style");
     style.id="tl-native-briefing-style";
     style.textContent=[
-      ".tl-native-briefing{display:flex;flex-direction:column;gap:11px}",
-      ".tl-native-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}",
-      ".tl-native-title{font-family:var(--f-disp);font-size:15px;font-weight:700;letter-spacing:1.7px;color:#f8fafc}",
-      ".tl-native-date{font-size:11.5px;color:var(--txt-2);margin-top:3px}",
-      ".tl-native-status{font-size:9px;font-weight:700;color:var(--green);border:1px solid rgba(34,197,94,.34);background:rgba(34,197,94,.08);border-radius:999px;padding:5px 8px;white-space:nowrap}",
-      ".tl-native-status.wait{color:var(--gold);border-color:rgba(255,200,87,.34);background:rgba(255,200,87,.08)}",
-      ".tl-native-summary{font-size:13px;line-height:1.5;color:#dbeafe}",
-      ".tl-native-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}",
-      ".tl-native-card{min-width:0;border:1px solid rgba(96,165,250,.16);background:rgba(8,15,34,.68);border-radius:11px;padding:8px}",
-      ".tl-native-card small{display:block;font-size:8px;color:var(--txt-3);text-transform:uppercase;white-space:nowrap}",
-      ".tl-native-card strong{display:block;font-size:12px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
-      ".tl-native-card strong.pos{color:var(--green-2)}",
-      ".tl-native-card strong.neg{color:var(--red)}",
-      ".tl-native-focus{border-left:2px solid var(--cyan);background:linear-gradient(90deg,rgba(0,229,255,.08),transparent);padding:8px 9px;font-size:12px;line-height:1.43;color:var(--txt-2)}",
-      ".tl-native-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}",
-      ".tl-native-analyse,.tl-native-settings{border:0;background:transparent;color:var(--cyan);font-size:11px;font-weight:700;padding:3px 0;cursor:pointer}",
-      ".tl-native-settings{width:32px;height:32px;border:1px solid rgba(96,165,250,.24);border-radius:9px;background:rgba(8,15,34,.72);font-size:16px}",
-      ".tl-native-overlay{position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.82);display:flex;align-items:flex-end;padding:16px}",
-      ".tl-native-sheet{width:100%;background:#071020;border:1px solid rgba(96,165,250,.28);border-radius:18px;padding:18px}",
+      ".tl-native-briefing{position:relative;overflow:hidden}",
+      ".tl-reference-main{display:grid;grid-template-columns:minmax(0,1fr) 116px;gap:13px;align-items:center;min-height:154px}",
+      ".tl-reference-copy{min-width:0;position:relative;z-index:2}",
+      ".tl-native-title{font-family:var(--f-disp);font-size:15px;font-weight:800;letter-spacing:2px;color:#f8fafc;line-height:1.2}",
+      ".tl-native-date{font-size:10.5px;color:var(--txt-3);margin-top:5px}",
+      ".tl-native-kicker{display:flex;align-items:center;gap:7px;margin-top:15px;font-size:9px;font-weight:800;letter-spacing:1.35px;color:var(--cyan);text-transform:uppercase}",
+      ".tl-native-kicker:before{content:'';width:14px;height:1px;background:linear-gradient(90deg,var(--cyan),rgba(34,247,255,0));box-shadow:0 0 7px rgba(34,247,255,.85)}",
+      ".tl-native-summary{margin-top:7px;font-size:12.5px;line-height:1.5;color:#dbeafe;max-width:100%}",
+      ".tl-native-focus{margin-top:7px;font-size:10.5px;line-height:1.45;color:var(--txt-2);max-width:100%}",
+      ".tl-reference-visual{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:146px;z-index:1}",
+      ".tl-reference-visual:before{content:'';position:absolute;inset:12px -8px 4px;background:radial-gradient(circle at 50% 48%,rgba(34,247,255,.16),rgba(37,99,235,.08) 38%,transparent 70%);filter:blur(4px)}",
+      ".tl-native-status{position:absolute;top:0;right:0;font-size:7.5px;font-weight:800;letter-spacing:.7px;color:var(--green-2);border:1px solid rgba(34,197,94,.26);background:rgba(5,18,28,.76);border-radius:999px;padding:4px 6px;white-space:nowrap;backdrop-filter:blur(8px)}",
+      ".tl-native-status.wait{color:var(--gold);border-color:rgba(255,200,87,.28)}",
+      ".tl-ai-orb{position:relative;width:96px;height:96px;border-radius:50%;margin-top:7px;filter:drop-shadow(0 0 11px rgba(34,247,255,.42)) drop-shadow(0 0 24px rgba(139,92,246,.22));animation:tlOrbFloat 4.2s ease-in-out infinite}",
+      ".tl-ai-orb:before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 40deg,rgba(34,247,255,.02),rgba(34,247,255,.92),rgba(37,99,235,.2),rgba(139,92,246,.82),rgba(34,247,255,.04));-webkit-mask:radial-gradient(circle,transparent 57%,#000 59%);mask:radial-gradient(circle,transparent 57%,#000 59%);animation:tlOrbSpin 8s linear infinite}",
+      ".tl-ai-orb:after{content:'';position:absolute;inset:13px;border-radius:50%;background:radial-gradient(circle at 38% 32%,rgba(255,255,255,.95) 0 2%,rgba(34,247,255,.88) 5%,rgba(13,148,136,.32) 17%,rgba(30,64,175,.34) 38%,rgba(6,10,28,.96) 70%);box-shadow:inset 0 0 18px rgba(34,247,255,.55),inset -10px -8px 22px rgba(139,92,246,.45),0 0 18px rgba(34,247,255,.48)}",
+      ".tl-orb-ring,.tl-orb-ring:before,.tl-orb-ring:after{position:absolute;content:'';border-radius:50%;border:1px solid rgba(34,247,255,.32)}",
+      ".tl-orb-ring{inset:5px;transform:rotateX(65deg);box-shadow:0 0 8px rgba(34,247,255,.28)}",
+      ".tl-orb-ring:before{inset:9px;transform:rotateY(63deg);border-color:rgba(139,92,246,.38)}",
+      ".tl-orb-ring:after{inset:18px;border-color:rgba(255,255,255,.22)}",
+      ".tl-orb-core{position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);border-radius:50%;background:#dfffff;box-shadow:0 0 8px #fff,0 0 17px var(--cyan),0 0 30px #2563eb;z-index:3}",
+      ".tl-orb-meta{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px;font-size:8px;color:var(--txt-3);text-align:center;white-space:nowrap}",
+      ".tl-orb-meta .pos{color:var(--green-2)}",
+      ".tl-orb-meta .neg{color:var(--red)}",
+      ".tl-level-line{position:relative;z-index:2;margin-top:3px;text-align:center;line-height:1.15}",
+      ".tl-native-level-label{display:block;font-size:7px;letter-spacing:.8px;text-transform:uppercase;color:var(--txt-3)}",
+      ".tl-native-level-value{display:block;margin-top:2px;font-size:10px;color:#f8fafc}",
+      ".tl-native-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;position:relative;z-index:3}",
+      ".tl-native-analyse,.tl-native-settings{border:0;background:transparent;color:var(--cyan);font-size:11px;font-weight:800;padding:3px 0;cursor:pointer}",
+      ".tl-native-settings{width:28px;height:28px;border:1px solid rgba(96,165,250,.22);border-radius:8px;background:rgba(8,15,34,.72);font-size:14px;color:#cbd5e1}",
+      ".tl-native-overlay{position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.84);display:flex;align-items:flex-end;padding:16px}",
+      ".tl-native-sheet{width:100%;background:#071020;border:1px solid rgba(96,165,250,.28);border-radius:18px;padding:18px;box-shadow:0 -20px 60px rgba(2,6,23,.55)}",
       ".tl-native-options{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}",
       ".tl-native-option{padding:12px;border-radius:12px;border:1px solid rgba(96,165,250,.18);background:rgba(8,15,34,.78);color:#dbeafe;font-weight:700}",
-      ".tl-native-option.active{border-color:var(--cyan);color:var(--cyan)}",
-      ".tl-native-close{width:100%;margin-top:12px;padding:11px;border:0;border-radius:11px;background:rgba(0,229,255,.12);color:var(--cyan);font-weight:700}"
+      ".tl-native-option.active{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 16px rgba(34,247,255,.08)}",
+      ".tl-native-close{width:100%;margin-top:12px;padding:11px;border:0;border-radius:11px;background:rgba(0,229,255,.12);color:var(--cyan);font-weight:700}",
+      "@keyframes tlOrbSpin{to{transform:rotate(360deg)}}",
+      "@keyframes tlOrbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}",
+      "@media(max-width:360px){.tl-reference-main{grid-template-columns:minmax(0,1fr) 104px;gap:9px}.tl-ai-orb{width:86px;height:86px}.tl-native-title{font-size:14px;letter-spacing:1.6px}.tl-native-summary{font-size:12px}}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -166,78 +139,20 @@
     if(!box)return;
     ensureStyles();
 
-    var market=getMarket();
-    var labels={XAUUSD:"GOLD",NAS100:"NASDAQ 100",EURUSD:"EURUSD",BTCUSD:"BITCOIN",MARKET:"GESAMTMARKT"};
-    var movers=readMovers();
-    var zones=readZones();
-    var view={ready:false,status:labels[market]+" · WIRD GELADEN",summary:"Die Live-Daten für dein ausgewähltes Daily Briefing werden geladen.",bias:"Wird geladen",biasClass:"",momentum:"Wird geladen",momentumClass:"",levelLabel:"Zeitrahmen",levelValue:"M15",focus:"Sobald die Marktdaten verfügbar sind, wird das Briefing automatisch aktualisiert."};
+    var selected=getMarket();
+    var names={XAUUSD:"GOLD",NAS100:"NASDAQ 100",EURUSD:"EURUSD",BTCUSD:"BITCOIN",MARKET:"GESAMTMARKT"};
 
-    if(market==="XAUUSD"){
-      var change=movers.XAUUSD;
-      var current=zones["AKTUELLER PREIS"],r1=zones["WIDERSTAND 1"],r2=zones["WIDERSTAND 2"],s1=zones["UNTERSTUTZUNG 1"],s2=zones["UNTERSTUTZUNG 2"];
-      if(change!==undefined||current!==undefined){
-        view.status="GOLD · M15 LIVE";
-        view.ready=change!==undefined&&current!==undefined&&r1!==undefined&&r2!==undefined&&s1!==undefined&&s2!==undefined;
-        if(change!==undefined){
-          view.bias=change>0.01?"Bullisch":change<-0.01?"Bärisch":"Neutral";
-          view.biasClass=change>0.01?"pos":change<-0.01?"neg":"";
-          view.momentum=Math.abs(change)>=0.15?"Stark":Math.abs(change)>=0.05?"Moderat":"Ruhig";
-          view.momentumClass=view.biasClass;
-        }
-        view.levelLabel="Nächstes Level";
-        view.levelValue="—";
-        view.summary="Gold"+(current!==undefined?" steht aktuell bei "+formatPrice(current):"")+(change!==undefined?" und bewegt sich im M15 um "+formatPercent(change):"")+".";
-        if(current!==undefined&&r1!==undefined&&r2!==undefined&&s1!==undefined&&s2!==undefined){
-          if(current>r1){view.bias="Bullisch";view.biasClass="pos";view.levelValue=formatPrice(r2);view.focus="Gold notiert über Widerstand 1. Der nächste technische Zielbereich liegt bei "+formatPrice(r2)+".";}
-          else if(current<s1){view.bias="Bärisch";view.biasClass="neg";view.levelValue=formatPrice(s2);view.focus="Gold handelt unter Unterstützung 1. Die nächste technische Zielzone liegt bei "+formatPrice(s2)+".";}
-          else if(change!==undefined&&change>=0){view.levelValue=formatPrice(r1);view.focus="Gold handelt innerhalb der Range. Bei positivem Momentum ist Widerstand 1 bei "+formatPrice(r1)+" entscheidend.";}
-          else{view.levelValue=formatPrice(s1);view.focus="Gold handelt innerhalb der Range. Bei negativem Momentum ist Unterstützung 1 bei "+formatPrice(s1)+" entscheidend.";}
-        }
-      }
-    }else if(market==="MARKET"){
-      var keys=Object.keys(movers);
-      if(keys.length){
-        var positives=keys.filter(function(key){return movers[key]>0;}).length;
-        var strongest=keys[0];
-        for(var i=1;i<keys.length;i++)if(Math.abs(movers[keys[i]])>Math.abs(movers[strongest]))strongest=keys[i];
-        var average=keys.reduce(function(sum,key){return sum+movers[key];},0)/keys.length;
-        view.ready=keys.length===4;
-        view.status=view.ready?"GESAMTMARKT · LIVE":"GESAMTMARKT · "+keys.length+"/4";
-        view.summary=positives+" von "+keys.length+" geladenen Märkten handeln positiv. "+strongest+" zeigt mit "+formatPercent(movers[strongest])+" die stärkste M15-Bewegung.";
-        view.bias=average>0.01?"Bullisch":average<-0.01?"Bärisch":"Neutral";
-        view.biasClass=average>0.01?"pos":average<-0.01?"neg":"";
-        view.momentum=strongest;
-        view.momentumClass=movers[strongest]>=0?"pos":"neg";
-        view.levelLabel="Geladen";
-        view.levelValue=keys.length+"/4";
-        view.focus="Der Gesamtmarkt-Modus vergleicht Gold, NAS100, EURUSD und Bitcoin anhand ihrer aktuellen M15-Bewegung.";
-      }
-    }else{
-      var selected=movers[market];
-      if(selected!==undefined){
-        view.ready=true;
-        view.status=labels[market]+" · M15 LIVE";
-        view.summary=labels[market]+" bewegt sich im aktuellen M15-Vergleich um "+formatPercent(selected)+".";
-        view.bias=selected>0.01?"Bullisch":selected<-0.01?"Bärisch":"Neutral";
-        view.biasClass=selected>0.01?"pos":selected<-0.01?"neg":"";
-        view.momentum=Math.abs(selected)>=0.15?"Stark":Math.abs(selected)>=0.05?"Moderat":"Ruhig";
-        view.momentumClass=view.biasClass;
-        view.levelLabel="M15 Änderung";
-        view.levelValue=formatPercent(selected);
-        view.focus="Das Briefing bewertet die kurzfristige M15-Bewegung von "+labels[market]+". Weitere Preiszonen werden später ergänzt.";
-      }
-    }
+    box.innerHTML="<div class='tl-native-briefing'><div class='tl-reference-main'><div class='tl-reference-copy'><div class='tl-native-title'>AI DAILY BRIEFING</div><div class='tl-native-date'>"+dateText()+"</div><div class='tl-native-kicker'>Marktüberblick</div><div class='tl-native-summary'>Die Live-Daten für dein ausgewähltes Briefing werden geladen.</div><div class='tl-native-focus'>Sobald die Marktdaten verfügbar sind, wird der Marktüberblick automatisch aktualisiert.</div></div><div class='tl-reference-visual'><div class='tl-native-status wait'>"+names[selected]+" · WIRD GELADEN</div><div class='tl-ai-orb'><span class='tl-orb-ring'></span><span class='tl-orb-core'></span></div><div class='tl-orb-meta'><span class='tl-native-bias'>Wird geladen</span><span>•</span><span class='tl-native-momentum'>M15</span></div><div class='tl-level-line'><span class='tl-native-level-label'>Nächstes Level</span><strong class='tl-native-level-value'>—</strong></div></div></div><div class='tl-native-actions'><button class='tl-native-analyse' type='button'>Analyse starten ›</button><button class='tl-native-settings' type='button' aria-label='Daily Briefing Einstellungen'>⚙</button></div></div>";
 
-    box.innerHTML="<div class='tl-native-briefing'><div class='tl-native-head'><div><div class='tl-native-title'>AI DAILY BRIEFING · "+labels[market]+"</div><div class='tl-native-date'>"+dateText()+"</div></div><span class='tl-native-status "+(view.ready?"":"wait")+"'>"+view.status+"</span></div><div class='tl-native-summary'>"+view.summary+"</div><div class='tl-native-grid'><div class='tl-native-card'><small>Bias</small><strong class='"+view.biasClass+"'>"+view.bias+"</strong></div><div class='tl-native-card'><small>Momentum</small><strong class='"+view.momentumClass+"'>"+view.momentum+"</strong></div><div class='tl-native-card'><small>"+view.levelLabel+"</small><strong>"+view.levelValue+"</strong></div></div><div class='tl-native-focus'>"+view.focus+"</div><div class='tl-native-actions'><button class='tl-native-analyse' type='button'>Analyse starten ›</button><button class='tl-native-settings' type='button' aria-label='Daily Briefing Einstellungen'>⚙</button></div></div>";
-    var analyse=box.querySelector(".tl-native-analyse");if(analyse)analyse.addEventListener("click",openAnalysis);
-    var settings=box.querySelector(".tl-native-settings");if(settings)settings.addEventListener("click",openSettings);
+    var analyse=box.querySelector(".tl-native-analyse");
+    if(analyse)analyse.addEventListener("click",openAnalysis);
+    var settings=box.querySelector(".tl-native-settings");
+    if(settings)settings.addEventListener("click",openSettings);
   }
 
   function start(){
     render();
-    clearInterval(timer);
-    timer=setInterval(render,1000);
-    setTimeout(function(){clearInterval(timer);timer=setInterval(render,5000);},30000);
+    setTimeout(render,450);
   }
 
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});

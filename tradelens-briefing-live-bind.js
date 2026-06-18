@@ -94,40 +94,39 @@
     var market=selectedMarket();
     var names={XAUUSD:"GOLD",NAS100:"NASDAQ 100",EURUSD:"EURUSD",BTCUSD:"BITCOIN",MARKET:"GESAMTMARKT"};
     var movers=moverData(),zones=zoneData();
-    var title=box.querySelector(".tl-native-title");
     var status=box.querySelector(".tl-native-status");
     var summary=box.querySelector(".tl-native-summary");
-    var cards=box.querySelectorAll(".tl-native-card");
     var focus=box.querySelector(".tl-native-focus");
-    if(!title||!status||!summary||cards.length<3||!focus)return;
-
-    var l1=cards[0].querySelector("small"),v1=cards[0].querySelector("strong");
-    var l2=cards[1].querySelector("small"),v2=cards[1].querySelector("strong");
-    var l3=cards[2].querySelector("small"),v3=cards[2].querySelector("strong");
-    title.textContent="AI DAILY BRIEFING · "+names[market];
+    var bias=box.querySelector(".tl-native-bias");
+    var momentum=box.querySelector(".tl-native-momentum");
+    var levelLabel=box.querySelector(".tl-native-level-label");
+    var levelValue=box.querySelector(".tl-native-level-value");
+    if(!status||!summary||!focus||!bias||!momentum||!levelLabel||!levelValue)return;
 
     if(market==="XAUUSD"){
       var change=movers.XAUUSD;
       var current=zones["AKTUELLER PREIS"],r1=zones["WIDERSTAND 1"],r2=zones["WIDERSTAND 2"],s1=zones["UNTERSTUTZUNG 1"],s2=zones["UNTERSTUTZUNG 2"];
       if(change===undefined&&current===undefined)return;
 
+      var ready=change!==undefined&&current!==undefined&&r1!==undefined&&r2!==undefined&&s1!==undefined&&s2!==undefined;
       status.textContent="GOLD · M15 LIVE";
-      status.classList.toggle("wait",!(change!==undefined&&current!==undefined&&r1!==undefined&&r2!==undefined&&s1!==undefined&&s2!==undefined));
+      status.classList.toggle("wait",!ready);
       summary.textContent="Gold"+(current!==undefined?" steht aktuell bei "+fmtPrice(current):"")+(change!==undefined?" und bewegt sich im M15 um "+fmtPct(change):"")+".";
-      l1.textContent="Gold-Bias";l2.textContent="Momentum";l3.textContent="Nächstes Level";
 
-      var bias=change>0.01?"Bullisch":change<-0.01?"Bärisch":"Neutral";
+      var biasText=change>0.01?"Bullisch":change<-0.01?"Bärisch":"Neutral";
       var color=change>0.01?"pos":change<-0.01?"neg":"";
-      v1.textContent=bias;cls(v1,color);
-      v2.textContent=change===undefined?"Wird geladen":Math.abs(change)>=0.15?"Stark":Math.abs(change)>=0.05?"Moderat":"Ruhig";cls(v2,color);
-      v3.textContent="—";
+      bias.textContent=biasText;
+      momentum.textContent=change===undefined?"M15":Math.abs(change)>=0.15?"Stark":Math.abs(change)>=0.05?"Moderat":"Ruhig";
+      cls(bias,color);cls(momentum,color);
+      levelLabel.textContent="Nächstes Level";
+      levelValue.textContent="—";
       focus.textContent="Die technischen Gold-Zonen werden geladen.";
 
       if(current!==undefined&&r1!==undefined&&r2!==undefined&&s1!==undefined&&s2!==undefined){
-        if(current>r1){v1.textContent="Bullisch";cls(v1,"pos");v3.textContent=fmtPrice(r2);focus.textContent="Gold notiert über Widerstand 1. Der nächste technische Zielbereich liegt bei "+fmtPrice(r2)+".";}
-        else if(current<s1){v1.textContent="Bärisch";cls(v1,"neg");v3.textContent=fmtPrice(s2);focus.textContent="Gold handelt unter Unterstützung 1. Die nächste technische Zielzone liegt bei "+fmtPrice(s2)+".";}
-        else if(change!==undefined&&change>=0){v3.textContent=fmtPrice(r1);focus.textContent="Gold handelt innerhalb der Range. Widerstand 1 bei "+fmtPrice(r1)+" ist das nächste wichtige Level.";}
-        else{v3.textContent=fmtPrice(s1);focus.textContent="Gold handelt innerhalb der Range. Unterstützung 1 bei "+fmtPrice(s1)+" ist das nächste wichtige Level.";}
+        if(current>r1){bias.textContent="Bullisch";cls(bias,"pos");levelValue.textContent=fmtPrice(r2);focus.textContent="Gold notiert über Widerstand 1. Der nächste Zielbereich liegt bei "+fmtPrice(r2)+".";}
+        else if(current<s1){bias.textContent="Bärisch";cls(bias,"neg");levelValue.textContent=fmtPrice(s2);focus.textContent="Gold handelt unter Unterstützung 1. Die nächste Zielzone liegt bei "+fmtPrice(s2)+".";}
+        else if(change!==undefined&&change>=0){levelValue.textContent=fmtPrice(r1);focus.textContent="Innerhalb der Range bleibt Widerstand 1 bei "+fmtPrice(r1)+" das nächste wichtige Level.";}
+        else{levelValue.textContent=fmtPrice(s1);focus.textContent="Innerhalb der Range bleibt Unterstützung 1 bei "+fmtPrice(s1)+" das nächste wichtige Level.";}
       }
       return;
     }
@@ -143,22 +142,23 @@
       status.textContent=keys.length===4?"GESAMTMARKT · LIVE":"GESAMTMARKT · "+keys.length+"/4";
       status.classList.toggle("wait",keys.length!==4);
       summary.textContent=positive+" von "+keys.length+" geladenen Märkten handeln positiv. "+strongest+" bewegt sich mit "+fmtPct(movers[strongest])+" am stärksten.";
-      l1.textContent="Markt-Bias";v1.textContent=avg>0.01?"Bullisch":avg<-0.01?"Bärisch":"Neutral";cls(v1,c);
-      l2.textContent="Stärkster Markt";v2.textContent=strongest;cls(v2,movers[strongest]>=0?"pos":"neg");
-      l3.textContent="Geladen";v3.textContent=keys.length+"/4";
-      focus.textContent="Der Gesamtmarkt-Modus vergleicht Gold, NAS100, EURUSD und Bitcoin anhand ihrer M15-Bewegung.";
+      bias.textContent=avg>0.01?"Bullisch":avg<-0.01?"Bärisch":"Neutral";cls(bias,c);
+      momentum.textContent=strongest;cls(momentum,movers[strongest]>=0?"pos":"neg");
+      levelLabel.textContent="Geladen";levelValue.textContent=keys.length+"/4";
+      focus.textContent="Verglichen werden Gold, NAS100, EURUSD und Bitcoin anhand ihrer aktuellen M15-Bewegung.";
       return;
     }
 
     var move=movers[market];
     if(move===undefined)return;
     var moveClass=move>0.01?"pos":move<-0.01?"neg":"";
-    status.textContent=names[market]+" · M15 LIVE";status.classList.remove("wait");
+    status.textContent=names[market]+" · M15 LIVE";
+    status.classList.remove("wait");
     summary.textContent=names[market]+" bewegt sich im M15 um "+fmtPct(move)+".";
-    l1.textContent="Bias";v1.textContent=move>0.01?"Bullisch":move<-0.01?"Bärisch":"Neutral";cls(v1,moveClass);
-    l2.textContent="Momentum";v2.textContent=Math.abs(move)>=0.15?"Stark":Math.abs(move)>=0.05?"Moderat":"Ruhig";cls(v2,moveClass);
-    l3.textContent="M15 Änderung";v3.textContent=fmtPct(move);cls(v3,moveClass);
-    focus.textContent="Das Briefing bewertet die kurzfristige M15-Bewegung von "+names[market]+".";
+    bias.textContent=move>0.01?"Bullisch":move<-0.01?"Bärisch":"Neutral";cls(bias,moveClass);
+    momentum.textContent=Math.abs(move)>=0.15?"Stark":Math.abs(move)>=0.05?"Moderat":"Ruhig";cls(momentum,moveClass);
+    levelLabel.textContent="M15 Änderung";levelValue.textContent=fmtPct(move);
+    focus.textContent="Das Briefing bewertet die kurzfristige Bewegung von "+names[market]+".";
   }
 
   function start(){
