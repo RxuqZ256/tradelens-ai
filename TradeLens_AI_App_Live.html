@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>TradeLens AI Live</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020617}
+    #app{display:block;width:100%;height:100dvh;border:0;background:#020617}
+    #boot-status{position:fixed;right:10px;bottom:10px;z-index:9999;padding:6px 9px;border-radius:10px;background:rgba(2,6,23,.86);border:1px solid rgba(0,229,255,.28);color:#94a3b8;font:600 10px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;pointer-events:none}
+    #boot-status.ok{color:#22c55e;border-color:rgba(34,197,94,.35)}
+    #boot-status.err{color:#fb7185;border-color:rgba(251,113,133,.4)}
+  </style>
+</head>
+<body>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?live_wrapper=20260618p"></iframe>
+  <div id="boot-status">Live-Modul wird vorbereitet …</div>
+  <script>
+  (function(){
+    "use strict";
+    var frame=document.getElementById("app");
+    var badge=document.getElementById("boot-status");
+
+    function status(text,type){
+      badge.textContent=text;
+      badge.className=type||"";
+    }
+
+    function addScript(doc,src,onload,onerror,marker){
+      var s=doc.createElement("script");
+      s.src=src;
+      s.async=true;
+      if(marker)s.setAttribute(marker,"true");
+      s.onload=onload||null;
+      s.onerror=onerror||null;
+      doc.head.appendChild(s);
+      return s;
+    }
+
+    function injectMarket(win,doc){
+      win.TRADELENS_CONFIG={
+        APP_MODE:"production",
+        SUPABASE_URL:"https://afdletrvfhfmcuhlisqq.supabase.co",
+        SUPABASE_ANON_KEY:"sb_publishable_xge0UxBMeTeyvs0NcrGbuw_UzG6LkpY",
+        REDIRECT_URL:"https://rxuqz256.github.io/tradelens-ai/index.html",
+        LOGIN_FILE:"index.html",
+        APP_FILE:"TradeLens_AI_App.html",
+        SUPABASE_JS_CDN:"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
+        ANALYZE_FUNCTION:"smooth-endpoint",
+        MARKET_DATA_FUNCTION:"market-data"
+      };
+
+      var style=doc.createElement("style");
+      style.textContent="#page-overview,#page-uebersicht,#page-dashboard{padding-bottom:calc(78px + env(safe-area-inset-bottom))!important;scroll-padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}#page-overview::after,#page-uebersicht::after,#page-dashboard::after{content:none!important;display:none!important;height:0!important}";
+      doc.head.appendChild(style);
+
+      var old=doc.querySelectorAll("script[data-tl-market-bootstrap],script[data-tl-market],script[data-live-wrapper-market]");
+      for(var i=0;i<old.length;i++){if(old[i].parentNode)old[i].parentNode.removeChild(old[i]);}
+      try{win.TLMarket=null;}catch(_e){}
+
+      addScript(
+        doc,
+        "tradelens-market-v7.js?live_wrapper=20260618p&t="+Date.now(),
+        function(){
+          status("Live-Modul geladen","ok");
+          if(win.TLMarket&&typeof win.TLMarket.refresh==="function")win.TLMarket.refresh();
+          setTimeout(function(){badge.style.display="none";},2500);
+        },
+        function(){status("Live-Modul konnte nicht geladen werden","err");},
+        "data-live-wrapper-market"
+      );
+    }
+
+    function boot(){
+      try{
+        var win=frame.contentWindow;
+        var doc=frame.contentDocument||win.document;
+        if(!doc||!doc.head){status("App-Dokument nicht erreichbar","err");return;}
+
+        status("Supabase wird geprüft …");
+        if(win.supabase&&win.supabase.createClient){
+          injectMarket(win,doc);
+          return;
+        }
+
+        addScript(
+          doc,
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
+          function(){injectMarket(win,doc);},
+          function(){status("Supabase-Bibliothek konnte nicht geladen werden","err");},
+          "data-live-wrapper-supabase"
+        );
+      }catch(error){
+        status("Live-Start fehlgeschlagen","err");
+      }
+    }
+
+    frame.addEventListener("load",function(){setTimeout(boot,500);});
+  })();
+  </script>
+</body>
+</html>
