@@ -47,8 +47,24 @@ window.TRADELENS_CONFIG = {
     document.head.appendChild(style);
   }
 
+  function isWrapperMode() {
+    try {
+      var params = new URLSearchParams(window.location.search || "");
+      return params.has("text_renderer") || params.has("direct_live") || params.has("live_wrapper");
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function mount() {
     injectSpacingFix();
+
+    // Die Live-Testseite besitzt einen eigenen Renderer. In diesem Modus
+    // darf das interne Modul keine parallelen Twelve-Data-Abfragen starten.
+    if (isWrapperMode()) {
+      document.documentElement.setAttribute("data-tl-market-loader", "wrapper-controlled");
+      return;
+    }
 
     if (window.TLMarket && typeof window.TLMarket.refresh === "function") {
       window.TLMarket.refresh();
