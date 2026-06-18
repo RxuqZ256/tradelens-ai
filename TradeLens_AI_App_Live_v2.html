@@ -10,9 +10,30 @@
   </style>
 </head>
 <body>
-  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?daily_v3=20260618x"></iframe>
+  <iframe id="app" title="TradeLens AI" src="TradeLens_AI_App.html?daily_partial=20260618y"></iframe>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="tradelens-live-direct-v3.js?v=20260618x"></script>
-  <script src="tradelens-daily-briefing-v3.js?v=20260618x"></script>
+  <script src="tradelens-live-direct-v3.js?v=20260618y"></script>
+  <script src="tradelens-daily-briefing-v3.js?v=20260618y"></script>
+  <script>
+  (function(){
+    var frame=document.getElementById('app'),last='';
+    function n(v){var s=String(v||'').replace(/%/g,'').replace(/\s/g,'').replace(/[^0-9,+\-.]/g,'');if(!s||s==='-'||s==='—')return null;if(s.indexOf(',')>=0)s=s.replace(/\./g,'').replace(',','.');var x=Number(s);return Number.isFinite(x)?x:null;}
+    function fmt(v){return(v>0?'+':'')+v.toFixed(2).replace('.',',')+'%';}
+    function doc(){try{return frame.contentDocument||frame.contentWindow.document;}catch(e){return null;}}
+    function render(){
+      var d=doc();if(!d||!d.body)return;var box=d.querySelector('.briefing');if(!box)return;
+      if(box.getAttribute('data-daily-v3')==='ready')return;
+      if(!d.getElementById('tl-partial-briefing-style')){var st=d.createElement('style');st.id='tl-partial-briefing-style';st.textContent='.tlp{display:flex;flex-direction:column;gap:10px}.tlp-h{display:flex;justify-content:space-between;gap:10px}.tlp-t{font-family:var(--f-disp);font-size:15px;font-weight:700;letter-spacing:1.8px}.tlp-s{font-family:var(--f-body);font-size:13px;line-height:1.5;color:#dbeafe}.tlp-b{font-family:var(--f-disp);font-size:9px;color:var(--gold);border:1px solid rgba(255,200,87,.35);border-radius:999px;padding:5px 8px;white-space:nowrap}.tlp-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.tlp-c{border:1px solid rgba(96,165,250,.16);border-radius:11px;padding:8px}.tlp-c small{display:block;font-size:8px;color:var(--txt-3)}.tlp-c strong{display:block;font-size:12px;margin-top:3px}.tlp-f{border-left:2px solid var(--cyan);padding:8px 9px;background:linear-gradient(90deg,rgba(0,229,255,.08),transparent);font-size:12px;color:var(--txt-2)}';d.head.appendChild(st);}
+      var m={},rows=d.querySelectorAll('.mover');for(var i=0;i<rows.length;i++){var s=rows[i].querySelector('.sym'),v=rows[i].querySelector('.pct'),x=v&&n(v.textContent);if(s&&x!==null)m[s.textContent.trim()]=x;}
+      var z={},zr=d.querySelectorAll('.zr');for(var j=0;j<zr.length;j++){var l=zr[j].querySelector('.lbl'),vv=zr[j].querySelector('.val'),xx=vv&&n(vv.textContent);if(l&&xx!==null)z[l.textContent.trim().toUpperCase()]=xx;}
+      var keys=Object.keys(m),sig=JSON.stringify({m:m,z:z});if(sig===last&&box.getAttribute('data-partial-briefing')==='ready')return;last=sig;
+      var status=keys.length?('LIVE TEILWEISE '+keys.length+'/4'):'VERBINDUNG WIRD AUFGEBAUT';var summary='Marktdaten werden geladen und fortlaufend aktualisiert.';var strongest='—',bias='Wird geladen';
+      if(keys.length){strongest=keys[0];for(i=1;i<keys.length;i++)if(Math.abs(m[keys[i]])>Math.abs(m[strongest]))strongest=keys[i];var pos=keys.filter(function(k){return m[k]>0;}).length;bias=pos>keys.length/2?'Leicht positiv':pos<keys.length/2?'Leicht negativ':'Ausgeglichen';summary=pos+' von '+keys.length+' geladenen Märkten handeln positiv. '+strongest+' zeigt mit '+fmt(m[strongest])+' die stärkste M15-Bewegung.';}
+      var current=z['AKTUELLER PREIS'],r1=z['WIDERSTAND 1'],s1=z['UNTERSTÜTZUNG 1'];var gold='Wird geladen',focus='Die technischen Gold-Zonen werden noch geladen.';if(current!=null&&r1!=null&&s1!=null){gold=current>r1?'Über R1':current<s1?'Unter S1':'In der Range';focus='Gold steht aktuell bei '+new Intl.NumberFormat('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(current)+'.';}
+      box.setAttribute('data-partial-briefing','ready');box.innerHTML='<div class="tlp"><div class="tlp-h"><div><div class="tlp-t">AI DAILY BRIEFING</div><div style="color:var(--txt-2);font-size:11.5px;margin-top:3px">'+new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(new Date())+'</div></div><span class="tlp-b">'+status+'</span></div><div class="tlp-s">'+summary+'</div><div class="tlp-g"><div class="tlp-c"><small>MARKT-BIAS</small><strong>'+bias+'</strong></div><div class="tlp-c"><small>STÄRKSTER MARKT</small><strong>'+strongest+'</strong></div><div class="tlp-c"><small>GOLD M15</small><strong>'+gold+'</strong></div></div><div class="tlp-f">'+focus+'</div></div>';
+    }
+    frame.addEventListener('load',function(){setTimeout(render,100);setInterval(render,1000);});
+  })();
+  </script>
 </body>
 </html>
