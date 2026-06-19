@@ -8,9 +8,9 @@
       if(!doc||!doc.head){setTimeout(mountBriefing,500);return;}
 
       var files=[
-        {id:"tl-native-briefing-script",src:"tradelens-briefing-native.js?v=20260619i"},
-        {id:"tl-briefing-live-bind-script",src:"tradelens-briefing-live-bind.js?v=20260619i"},
-        {id:"tl-live-sentiment-script",src:"tradelens-sentiment-live-v1.js?v=20260619i"}
+        {id:"tl-native-briefing-script",src:"tradelens-briefing-native.js?v=20260619j"},
+        {id:"tl-briefing-live-bind-script",src:"tradelens-briefing-live-bind.js?v=20260619j"},
+        {id:"tl-live-sentiment-script",src:"tradelens-sentiment-live-v1.js?v=20260619j"}
       ];
 
       files.forEach(function(file){
