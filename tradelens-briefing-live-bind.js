@@ -81,33 +81,12 @@
     try{return localStorage.getItem(PREF_KEY)||"XAUUSD";}catch(e){return"XAUUSD";}
   }
 
-  function cls(el,name){
-    if(!el)return;
-    el.classList.remove("pos","neg");
-    if(name)el.classList.add(name);
-  }
-
   function biasFor(market,move){
     var thresholds={XAUUSD:.10,NAS100:.15,EURUSD:.05,BTCUSD:.25,MARKET:.10};
     var threshold=thresholds[market]||.10;
-    if(move>threshold)return{label:"Bullisch",className:"pos"};
-    if(move<-threshold)return{label:"Bärisch",className:"neg"};
-    return{label:"Neutral",className:""};
-  }
-
-  function momentumFor(market,move){
-    var absolute=Math.abs(move);
-    var limits={
-      XAUUSD:{moderate:.30,strong:1.00},
-      NAS100:{moderate:.50,strong:1.50},
-      EURUSD:{moderate:.25,strong:.75},
-      BTCUSD:{moderate:1.00,strong:3.00},
-      MARKET:{moderate:.30,strong:1.00}
-    };
-    var selected=limits[market]||limits.XAUUSD;
-    if(absolute>=selected.strong)return"Stark";
-    if(absolute>=selected.moderate)return"Moderat";
-    return"Ruhig";
+    if(move>threshold)return"bullisch";
+    if(move<-threshold)return"bärisch";
+    return"neutral";
   }
 
   function update(){
@@ -117,16 +96,9 @@
     var market=selectedMarket();
     var names={XAUUSD:"GOLD",NAS100:"NASDAQ 100",EURUSD:"EURUSD",BTCUSD:"BITCOIN",MARKET:"GESAMTMARKT"};
     var movers=moverData(),zones=zoneData();
-    var status=box.querySelector(".tl-native-status");
     var summary=box.querySelector(".tl-native-summary");
     var focus=box.querySelector(".tl-native-focus");
-    var bias=box.querySelector(".tl-native-bias");
-    var momentum=box.querySelector(".tl-native-momentum");
-    var levelLabel=box.querySelector(".tl-native-level-label");
-    var levelValue=box.querySelector(".tl-native-level-value");
-    if(!summary||!focus||!bias||!momentum||!levelLabel||!levelValue)return;
-
-    if(status)status.style.display="none";
+    if(!summary||!focus)return;
 
     if(market==="XAUUSD"){
       var change=movers.XAUUSD;
@@ -135,19 +107,14 @@
 
       summary.textContent="Gold"+(current!==undefined?" steht aktuell bei "+fmtPrice(current):"")+(change!==undefined?" und liegt heute bei "+fmtPct(change):"")+".";
 
-      var goldBias=change===undefined?{label:"Wird geladen",className:""}:biasFor("XAUUSD",change);
-      bias.textContent=goldBias.label;
-      momentum.textContent=change===undefined?"Daily":momentumFor("XAUUSD",change);
-      cls(bias,goldBias.className);cls(momentum,goldBias.className);
-      levelLabel.textContent="Intraday-Level";
-      levelValue.textContent="—";
-      focus.textContent="Die technischen Intraday-Zonen für Gold werden geladen.";
+      var bias=change===undefined?"noch nicht verfügbar":biasFor("XAUUSD",change);
+      focus.textContent="Der Tagesbias ist "+bias+". Die Intraday-Zonen werden geladen.";
 
       if(current!==undefined&&r1!==undefined&&r2!==undefined&&s1!==undefined&&s2!==undefined){
-        if(current>r1){levelValue.textContent=fmtPrice(r2);focus.textContent="Der Tagesbias ist "+goldBias.label.toLowerCase()+". Intraday liegt der nächste Zielbereich bei "+fmtPrice(r2)+".";}
-        else if(current<s1){levelValue.textContent=fmtPrice(s2);focus.textContent="Der Tagesbias ist "+goldBias.label.toLowerCase()+". Intraday liegt die nächste Zielzone bei "+fmtPrice(s2)+".";}
-        else if(change!==undefined&&change>=0){levelValue.textContent=fmtPrice(r1);focus.textContent="Der Tagesbias ist "+goldBias.label.toLowerCase()+". Intraday bleibt Widerstand 1 bei "+fmtPrice(r1)+" entscheidend.";}
-        else{levelValue.textContent=fmtPrice(s1);focus.textContent="Der Tagesbias ist "+goldBias.label.toLowerCase()+". Intraday bleibt Unterstützung 1 bei "+fmtPrice(s1)+" entscheidend.";}
+        if(current>r1)focus.textContent="Der Tagesbias ist "+bias+". Intraday liegt der nächste Zielbereich bei "+fmtPrice(r2)+".";
+        else if(current<s1)focus.textContent="Der Tagesbias ist "+bias+". Intraday liegt die nächste Zielzone bei "+fmtPrice(s2)+".";
+        else if(change!==undefined&&change>=0)focus.textContent="Der Tagesbias ist "+bias+". Intraday bleibt Widerstand 1 bei "+fmtPrice(r1)+" entscheidend.";
+        else focus.textContent="Der Tagesbias ist "+bias+". Intraday bleibt Unterstützung 1 bei "+fmtPrice(s1)+" entscheidend.";
       }
       return;
     }
@@ -158,24 +125,15 @@
       var positive=keys.filter(function(k){return movers[k]>0;}).length;
       var strongest=keys[0];
       for(var i=1;i<keys.length;i++)if(Math.abs(movers[keys[i]])>Math.abs(movers[strongest]))strongest=keys[i];
-      var avg=keys.reduce(function(sum,k){return sum+movers[k];},0)/keys.length;
-      var marketBias=biasFor("MARKET",avg);
       summary.textContent=positive+" von "+keys.length+" Märkten handeln heute positiv. "+strongest+" zeigt mit "+fmtPct(movers[strongest])+" die stärkste Tagesbewegung.";
-      bias.textContent=marketBias.label;cls(bias,marketBias.className);
-      momentum.textContent=strongest;cls(momentum,movers[strongest]>=0?"pos":"neg");
-      levelLabel.textContent="Geladen";levelValue.textContent=keys.length+"/4";
       focus.textContent="Verglichen werden Gold, NAS100, EURUSD und Bitcoin anhand ihrer heutigen Veränderung.";
       return;
     }
 
     var move=movers[market];
     if(move===undefined)return;
-    var selectedBias=biasFor(market,move);
     summary.textContent=names[market]+" liegt heute bei "+fmtPct(move)+".";
-    bias.textContent=selectedBias.label;cls(bias,selectedBias.className);
-    momentum.textContent=momentumFor(market,move);cls(momentum,selectedBias.className);
-    levelLabel.textContent="Tagesänderung";levelValue.textContent=fmtPct(move);cls(levelValue,selectedBias.className);
-    focus.textContent="Das Briefing bewertet die aktuelle Tagesbewegung von "+names[market]+".";
+    focus.textContent="Der Tagesbias für "+names[market]+" ist "+biasFor(market,move)+".";
   }
 
   function start(){
