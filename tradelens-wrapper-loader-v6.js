@@ -8,9 +8,8 @@
       if(!doc||!doc.head){setTimeout(mountBriefing,500);return;}
 
       var files=[
-        {id:"tl-native-briefing-script",src:"tradelens-briefing-native.js?v=20260619e"},
-        {id:"tl-briefing-live-bind-script",src:"tradelens-briefing-live-bind.js?v=20260619e"},
-        {id:"tl-reference-overview-script",src:"tradelens-overview-reference-v1.js?v=20260619e"}
+        {id:"tl-native-briefing-script",src:"tradelens-briefing-native.js?v=20260619f"},
+        {id:"tl-briefing-live-bind-script",src:"tradelens-briefing-live-bind.js?v=20260619f"}
       ];
 
       files.forEach(function(file){
