@@ -84,9 +84,40 @@
       ".tl-live-sentiment-label{font-weight:800!important;letter-spacing:.6px!important}",
       ".tl-live-sentiment-score{position:relative!important;z-index:3!important;color:#fff!important;text-shadow:0 0 12px rgba(255,255,255,.16)!important}",
       ".tl-live-sentiment-caption{position:relative!important;z-index:3!important}",
-      ".tl-live-sentiment-arc{position:absolute;z-index:1;pointer-events:none;border-radius:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 8px rgba(34,211,238,.18));-webkit-mask:radial-gradient(circle,transparent 65%,#000 67%);mask:radial-gradient(circle,transparent 65%,#000 67%)}"
+      ".tl-live-sentiment-gauge-anchor{position:relative!important;overflow:visible!important}",
+      ".tl-live-sentiment-arc{position:absolute;left:50%;top:50%;z-index:1;pointer-events:none;border-radius:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 7px currentColor);mix-blend-mode:screen;-webkit-mask:radial-gradient(circle,transparent 0 72%,#000 73% 84%,transparent 85% 100%);mask:radial-gradient(circle,transparent 0 72%,#000 73% 84%,transparent 85% 100%)}"
     ].join("\n");
     document.head.appendChild(style);
+  }
+
+  function findGaugeAnchor(card,score,maxLabel){
+    var start=(maxLabel&&maxLabel.parentElement)||(score&&score.parentElement);
+    var node=start;
+    while(node&&node!==card){
+      var rect=node.getBoundingClientRect();
+      var ratio=rect.height?rect.width/rect.height:0;
+      if(rect.width>=125&&rect.height>=125&&rect.width<=280&&rect.height<=280&&ratio>=.72&&ratio<=1.28)return node;
+      node=node.parentElement;
+    }
+
+    var scoreRect=score?score.getBoundingClientRect():null;
+    if(!scoreRect)return card;
+    var centerX=scoreRect.left+scoreRect.width/2;
+    var centerY=scoreRect.top+scoreRect.height/2;
+    var candidates=card.querySelectorAll("div,section,article,svg");
+    var best=null,bestMetric=Infinity;
+    for(var i=0;i<candidates.length;i++){
+      var current=candidates[i];
+      if(current.classList&&current.classList.contains("tl-live-sentiment-arc"))continue;
+      var r=current.getBoundingClientRect();
+      var currentRatio=r.height?r.width/r.height:0;
+      if(r.width<125||r.height<125||r.width>280||r.height>280||currentRatio<.72||currentRatio>1.28)continue;
+      var dx=(r.left+r.width/2)-centerX;
+      var dy=(r.top+r.height/2)-centerY;
+      var metric=Math.sqrt(dx*dx+dy*dy)+Math.abs(r.width-r.height)*.35;
+      if(metric<bestMetric){best=current;bestMetric=metric;}
+    }
+    return best||card;
   }
 
   function update(){
@@ -147,17 +178,21 @@
     }
 
     if(score){
-      var cardRect=card.getBoundingClientRect();
-      var scoreRect=score.getBoundingClientRect();
-      var arc=card.querySelector(".tl-live-sentiment-arc");
-      if(!arc){arc=document.createElement("div");arc.className="tl-live-sentiment-arc";card.appendChild(arc);}
-      var size=Math.min(164,Math.max(132,cardRect.width*.58));
+      var anchor=findGaugeAnchor(card,score,maxLabel);
+      anchor.classList.add("tl-live-sentiment-gauge-anchor");
+
+      var oldArc=card.querySelector(".tl-live-sentiment-arc");
+      if(oldArc&&oldArc.parentElement!==anchor){oldArc.remove();oldArc=null;}
+      var arc=oldArc;
+      if(!arc){arc=document.createElement("div");arc.className="tl-live-sentiment-arc";anchor.appendChild(arc);}
+
+      var anchorRect=anchor.getBoundingClientRect();
+      var size=Math.max(124,Math.min(214,Math.min(anchorRect.width,anchorRect.height)*.94));
       arc.style.width=size+"px";
       arc.style.height=size+"px";
-      arc.style.left=(scoreRect.left-cardRect.left+scoreRect.width/2)+"px";
-      arc.style.top=(scoreRect.top-cardRect.top+scoreRect.height/2)+"px";
+      arc.style.color=view.color;
       var angle=view.score*2.7;
-      arc.style.background="conic-gradient(from 225deg,"+view.color+" 0deg "+angle+"deg,rgba(30,64,175,.26) "+angle+"deg 270deg,transparent 270deg 360deg)";
+      arc.style.background="conic-gradient(from 225deg,"+view.color+" 0deg "+angle+"deg,transparent "+angle+"deg 360deg)";
     }
   }
 
