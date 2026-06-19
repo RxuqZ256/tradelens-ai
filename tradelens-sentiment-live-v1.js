@@ -82,10 +82,11 @@
     style.textContent=[
       ".tl-live-sentiment-card{position:relative!important;overflow:hidden!important}",
       ".tl-live-sentiment-label{font-weight:800!important;letter-spacing:.6px!important}",
-      ".tl-live-sentiment-score{position:relative!important;z-index:3!important;color:#fff!important;text-shadow:0 0 12px rgba(255,255,255,.16)!important}",
-      ".tl-live-sentiment-caption{position:relative!important;z-index:3!important}",
+      ".tl-live-sentiment-score{position:relative!important;z-index:4!important;color:#fff!important;text-shadow:0 0 12px rgba(255,255,255,.16)!important}",
+      ".tl-live-sentiment-caption{position:relative!important;z-index:4!important}",
       ".tl-live-sentiment-gauge-anchor{position:relative!important;overflow:visible!important}",
-      ".tl-live-sentiment-arc{position:absolute;left:50%;top:50%;z-index:1;pointer-events:none;border-radius:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 7px currentColor);mix-blend-mode:screen;-webkit-mask:radial-gradient(circle,transparent 0 72%,#000 73% 84%,transparent 85% 100%);mask:radial-gradient(circle,transparent 0 72%,#000 73% 84%,transparent 85% 100%)}"
+      ".tl-live-sentiment-svg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible}",
+      ".tl-live-sentiment-svg path{fill:none;stroke-linecap:round;stroke-width:8;filter:drop-shadow(0 0 5px currentColor)}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -108,7 +109,7 @@
     var best=null,bestMetric=Infinity;
     for(var i=0;i<candidates.length;i++){
       var current=candidates[i];
-      if(current.classList&&current.classList.contains("tl-live-sentiment-arc"))continue;
+      if(current.classList&&current.classList.contains("tl-live-sentiment-svg"))continue;
       var r=current.getBoundingClientRect();
       var currentRatio=r.height?r.width/r.height:0;
       if(r.width<125||r.height<125||r.width>280||r.height>280||currentRatio<.72||currentRatio>1.28)continue;
@@ -118,6 +119,23 @@
       if(metric<bestMetric){best=current;bestMetric=metric;}
     }
     return best||card;
+  }
+
+  function ensureProgressSvg(anchor){
+    var svg=anchor.querySelector(".tl-live-sentiment-svg");
+    if(svg)return svg;
+
+    svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("class","tl-live-sentiment-svg");
+    svg.setAttribute("viewBox","0 0 120 120");
+    svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+
+    var path=document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d","M24.645 95.355 A50 50 0 1 1 95.355 95.355");
+    path.setAttribute("pathLength","100");
+    svg.appendChild(path);
+    anchor.appendChild(svg);
+    return svg;
   }
 
   function update(){
@@ -160,7 +178,7 @@
       label.style.color=view.color;
       label.classList.add("tl-live-sentiment-label");
       label.style.position="relative";
-      label.style.zIndex="3";
+      label.style.zIndex="4";
     }
     if(score){
       score.textContent=String(view.score);
@@ -173,6 +191,7 @@
 
     var paths=card.querySelectorAll("svg path");
     for(var p=0;p<paths.length;p++){
+      if(paths[p].closest&&paths[p].closest(".tl-live-sentiment-svg"))continue;
       paths[p].style.stroke=view.color;
       paths[p].style.filter="drop-shadow(0 0 4px "+view.color+")";
     }
@@ -182,17 +201,14 @@
       anchor.classList.add("tl-live-sentiment-gauge-anchor");
 
       var oldArc=card.querySelector(".tl-live-sentiment-arc");
-      if(oldArc&&oldArc.parentElement!==anchor){oldArc.remove();oldArc=null;}
-      var arc=oldArc;
-      if(!arc){arc=document.createElement("div");arc.className="tl-live-sentiment-arc";anchor.appendChild(arc);}
+      if(oldArc)oldArc.remove();
 
-      var anchorRect=anchor.getBoundingClientRect();
-      var size=Math.max(124,Math.min(214,Math.min(anchorRect.width,anchorRect.height)*.94));
-      arc.style.width=size+"px";
-      arc.style.height=size+"px";
-      arc.style.color=view.color;
-      var angle=view.score*2.7;
-      arc.style.background="conic-gradient(from 225deg,"+view.color+" 0deg "+angle+"deg,transparent "+angle+"deg 360deg)";
+      var svg=ensureProgressSvg(anchor);
+      var progress=svg.querySelector("path");
+      svg.style.color=view.color;
+      progress.setAttribute("stroke",view.color);
+      progress.setAttribute("stroke-dasharray",view.score+" "+(100-view.score));
+      progress.setAttribute("stroke-dashoffset","0");
     }
   }
 
