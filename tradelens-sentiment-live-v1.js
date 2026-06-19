@@ -2,6 +2,10 @@
   "use strict";
 
   var timer=null;
+  var SEGMENTS=15;
+  var START_ANGLE=135;
+  var TOTAL_SWEEP=270;
+  var GAP_ANGLE=4;
 
   function norm(value){
     var text=String(value||"").toUpperCase();
@@ -86,7 +90,9 @@
       ".tl-live-sentiment-caption{position:relative!important;z-index:4!important}",
       ".tl-live-sentiment-gauge-anchor{position:relative!important;overflow:visible!important}",
       ".tl-live-sentiment-svg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible}",
-      ".tl-live-sentiment-svg path{fill:none;stroke-linecap:round;stroke-width:8;filter:drop-shadow(0 0 5px currentColor)}"
+      ".tl-live-sentiment-svg .tl-segment-track{fill:none;stroke:#18365f;stroke-width:4.2;stroke-linecap:round;opacity:.48}",
+      ".tl-live-sentiment-svg .tl-segment-active{fill:none;stroke-width:5.2;stroke-linecap:round;filter:url(#tlSentimentGlow);transition:stroke .3s ease,opacity .3s ease}",
+      ".tl-live-sentiment-svg .tl-segment-active.tl-leading{stroke-width:5.8}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -121,7 +127,19 @@
     return best||card;
   }
 
-  function ensureProgressSvg(anchor){
+  function polar(cx,cy,r,angle){
+    var radians=(angle-90)*Math.PI/180;
+    return{x:cx+r*Math.cos(radians),y:cy+r*Math.sin(radians)};
+  }
+
+  function arcPath(cx,cy,r,startAngle,endAngle){
+    var start=polar(cx,cy,r,endAngle);
+    var end=polar(cx,cy,r,startAngle);
+    var largeArc=endAngle-startAngle<=180?0:1;
+    return"M "+start.x.toFixed(3)+" "+start.y.toFixed(3)+" A "+r+" "+r+" 0 "+largeArc+" 0 "+end.x.toFixed(3)+" "+end.y.toFixed(3);
+  }
+
+  function ensureSegmentedSvg(anchor){
     var svg=anchor.querySelector(".tl-live-sentiment-svg");
     if(svg)return svg;
 
@@ -130,12 +148,79 @@
     svg.setAttribute("viewBox","0 0 120 120");
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");
 
-    var path=document.createElementNS("http://www.w3.org/2000/svg","path");
-    path.setAttribute("d","M24.645 95.355 A50 50 0 1 1 95.355 95.355");
-    path.setAttribute("pathLength","100");
-    svg.appendChild(path);
+    var defs=document.createElementNS("http://www.w3.org/2000/svg","defs");
+    var filter=document.createElementNS("http://www.w3.org/2000/svg","filter");
+    filter.setAttribute("id","tlSentimentGlow");
+    filter.setAttribute("x","-60%");
+    filter.setAttribute("y","-60%");
+    filter.setAttribute("width","220%");
+    filter.setAttribute("height","220%");
+
+    var blur=document.createElementNS("http://www.w3.org/2000/svg","feGaussianBlur");
+    blur.setAttribute("stdDeviation","2.2");
+    blur.setAttribute("result","blur");
+    filter.appendChild(blur);
+
+    var merge=document.createElementNS("http://www.w3.org/2000/svg","feMerge");
+    var mergeBlur=document.createElementNS("http://www.w3.org/2000/svg","feMergeNode");
+    mergeBlur.setAttribute("in","blur");
+    var mergeSource=document.createElementNS("http://www.w3.org/2000/svg","feMergeNode");
+    mergeSource.setAttribute("in","SourceGraphic");
+    merge.appendChild(mergeBlur);
+    merge.appendChild(mergeSource);
+    filter.appendChild(merge);
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+
+    var track=document.createElementNS("http://www.w3.org/2000/svg","g");
+    track.setAttribute("class","tl-segment-track-group");
+    var active=document.createElementNS("http://www.w3.org/2000/svg","g");
+    active.setAttribute("class","tl-segment-active-group");
+
+    var segmentSweep=(TOTAL_SWEEP-(SEGMENTS-1)*GAP_ANGLE)/SEGMENTS;
+    for(var i=0;i<SEGMENTS;i++){
+      var start=START_ANGLE+i*(segmentSweep+GAP_ANGLE);
+      var end=start+segmentSweep;
+      var d=arcPath(60,60,46,start,end);
+
+      var trackPath=document.createElementNS("http://www.w3.org/2000/svg","path");
+      trackPath.setAttribute("class","tl-segment-track");
+      trackPath.setAttribute("d",d);
+      track.appendChild(trackPath);
+
+      var activePath=document.createElementNS("http://www.w3.org/2000/svg","path");
+      activePath.setAttribute("class","tl-segment-active");
+      activePath.setAttribute("d",d);
+      activePath.setAttribute("data-index",String(i));
+      activePath.style.opacity="0";
+      active.appendChild(activePath);
+    }
+
+    svg.appendChild(track);
+    svg.appendChild(active);
     anchor.appendChild(svg);
     return svg;
+  }
+
+  function renderSegments(svg,view){
+    var activePaths=svg.querySelectorAll(".tl-segment-active");
+    var exact=(view.score/100)*SEGMENTS;
+    var full=Math.floor(exact);
+    var partial=exact-full;
+
+    for(var i=0;i<activePaths.length;i++){
+      var path=activePaths[i];
+      path.classList.remove("tl-leading");
+      path.setAttribute("stroke",view.color);
+      if(i<full){
+        path.style.opacity=String(.76+.24*((i+1)/Math.max(1,full)));
+      }else if(i===full&&partial>.08){
+        path.style.opacity=String(Math.max(.24,partial*.88));
+        path.classList.add("tl-leading");
+      }else{
+        path.style.opacity="0";
+      }
+    }
   }
 
   function update(){
@@ -203,12 +288,8 @@
       var oldArc=card.querySelector(".tl-live-sentiment-arc");
       if(oldArc)oldArc.remove();
 
-      var svg=ensureProgressSvg(anchor);
-      var progress=svg.querySelector("path");
-      svg.style.color=view.color;
-      progress.setAttribute("stroke",view.color);
-      progress.setAttribute("stroke-dasharray",view.score+" "+(100-view.score));
-      progress.setAttribute("stroke-dashoffset","0");
+      var svg=ensureSegmentedSvg(anchor);
+      renderSegments(svg,view);
     }
   }
 
