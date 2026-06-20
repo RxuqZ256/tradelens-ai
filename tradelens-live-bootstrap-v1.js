@@ -1,6 +1,6 @@
 (function(){
   "use strict";
-  var version="20260620d";
+  var version="20260620e";
   var frame=document.getElementById("app");
 
   function addScript(src,id,onload){
@@ -22,13 +22,16 @@
         style.id="tl-score-size-fix";
         doc.head.appendChild(style);
       }
-      style.textContent=".tl-live-sentiment-score{font-size:36px!important;line-height:.88!important;letter-spacing:-.4px!important;margin-right:5px!important}";
+      style.textContent=".tl-live-sentiment-score{font-size:34px!important;line-height:.88!important;letter-spacing:-.3px!important;margin-right:6px!important;display:inline-block!important;transform:scale(.74)!important;transform-origin:center center!important}";
       var score=doc.querySelector(".tl-live-sentiment-score");
       if(score){
-        score.style.setProperty("font-size","36px","important");
+        score.style.setProperty("font-size","34px","important");
         score.style.setProperty("line-height",".88","important");
-        score.style.setProperty("letter-spacing","-.4px","important");
-        score.style.setProperty("margin-right","5px","important");
+        score.style.setProperty("letter-spacing","-.3px","important");
+        score.style.setProperty("margin-right","6px","important");
+        score.style.setProperty("display","inline-block","important");
+        score.style.setProperty("transform","scale(.74)","important");
+        score.style.setProperty("transform-origin","center center","important");
       }else{
         setTimeout(resizeSentimentScore,350);
       }
@@ -45,5 +48,6 @@
   if(frame){
     frame.addEventListener("load",function(){setTimeout(resizeSentimentScore,500);});
     setTimeout(resizeSentimentScore,900);
+    setInterval(resizeSentimentScore,1500);
   }
 })();
