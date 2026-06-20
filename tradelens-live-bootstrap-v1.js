@@ -1,6 +1,6 @@
 (function(){
   "use strict";
-  var version="20260620f";
+  var version="20260620g";
   var frame=document.getElementById("app");
 
   function addScript(src,id,onload){
@@ -12,7 +12,7 @@
     document.head.appendChild(script);
   }
 
-  function resizeSentimentScore(){
+  function alignSentimentScore(){
     try{
       var doc=frame&&(frame.contentDocument||frame.contentWindow.document);
       if(!doc||!doc.body)return;
@@ -25,16 +25,30 @@
         }
       }
       if(!total)return;
+
       var score=total.previousElementSibling;
       if(!score&&total.parentElement)score=total.parentElement.firstElementChild;
       if(!score)return;
-      score.style.setProperty("font-size","32px","important");
+
+      var row=total.parentElement;
+      if(row){
+        row.style.setProperty("display","flex","important");
+        row.style.setProperty("align-items","baseline","important");
+        row.style.setProperty("justify-content","center","important");
+        row.style.setProperty("gap","10px","important");
+        row.style.setProperty("width","100%","important");
+        row.style.setProperty("transform","translateX(-3px)","important");
+      }
+
+      score.style.setProperty("font-size","34px","important");
       score.style.setProperty("line-height","0.88","important");
       score.style.setProperty("display","inline-block","important");
-      score.style.setProperty("transform","scale(0.78)","important");
-      score.style.setProperty("transform-origin","center center","important");
+      score.style.setProperty("transform","none","important");
+      score.style.setProperty("margin","0","important");
+
       total.style.setProperty("font-size","12px","important");
-      total.style.setProperty("margin-left","5px","important");
+      total.style.setProperty("line-height","1","important");
+      total.style.setProperty("margin","0 0 2px 0","important");
     }catch(error){}
   }
 
@@ -44,8 +58,8 @@
   addScript("tradelens-wrapper-loader-v6.js?v="+version,"tl-wrapper-loader");
 
   if(frame){
-    frame.addEventListener("load",function(){setTimeout(resizeSentimentScore,500);});
-    setTimeout(resizeSentimentScore,900);
-    setInterval(resizeSentimentScore,1500);
+    frame.addEventListener("load",function(){setTimeout(alignSentimentScore,500);});
+    setTimeout(alignSentimentScore,900);
+    setInterval(alignSentimentScore,1500);
   }
 })();
