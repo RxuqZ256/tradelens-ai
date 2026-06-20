@@ -1,6 +1,6 @@
 (function(){
   "use strict";
-  var version="20260620b";
+  var version="20260620d";
   var frame=document.getElementById("app");
 
   function addScript(src,id,onload){
@@ -22,13 +22,13 @@
         style.id="tl-score-size-fix";
         doc.head.appendChild(style);
       }
-      style.textContent=".tl-live-sentiment-score{font-size:38px!important;line-height:.9!important;letter-spacing:-.6px!important;margin-right:4px!important}";
+      style.textContent=".tl-live-sentiment-score{font-size:36px!important;line-height:.88!important;letter-spacing:-.4px!important;margin-right:5px!important}";
       var score=doc.querySelector(".tl-live-sentiment-score");
       if(score){
-        score.style.setProperty("font-size","38px","important");
-        score.style.setProperty("line-height",".9","important");
-        score.style.setProperty("letter-spacing","-.6px","important");
-        score.style.setProperty("margin-right","4px","important");
+        score.style.setProperty("font-size","36px","important");
+        score.style.setProperty("line-height",".88","important");
+        score.style.setProperty("letter-spacing","-.4px","important");
+        score.style.setProperty("margin-right","5px","important");
       }else{
         setTimeout(resizeSentimentScore,350);
       }
