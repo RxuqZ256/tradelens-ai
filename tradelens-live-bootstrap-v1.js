@@ -1,6 +1,6 @@
 (function(){
   "use strict";
-  var version="20260620e";
+  var version="20260620f";
   var frame=document.getElementById("app");
 
   function addScript(src,id,onload){
@@ -15,29 +15,27 @@
   function resizeSentimentScore(){
     try{
       var doc=frame&&(frame.contentDocument||frame.contentWindow.document);
-      if(!doc||!doc.head){setTimeout(resizeSentimentScore,300);return;}
-      var style=doc.getElementById("tl-score-size-fix");
-      if(!style){
-        style=doc.createElement("style");
-        style.id="tl-score-size-fix";
-        doc.head.appendChild(style);
+      if(!doc||!doc.body)return;
+      var nodes=doc.querySelectorAll("*");
+      var total=null;
+      for(var i=0;i<nodes.length;i++){
+        if(nodes[i].children.length===0&&String(nodes[i].textContent||"").trim()==="/100"){
+          total=nodes[i];
+          break;
+        }
       }
-      style.textContent=".tl-live-sentiment-score{font-size:34px!important;line-height:.88!important;letter-spacing:-.3px!important;margin-right:6px!important;display:inline-block!important;transform:scale(.74)!important;transform-origin:center center!important}";
-      var score=doc.querySelector(".tl-live-sentiment-score");
-      if(score){
-        score.style.setProperty("font-size","34px","important");
-        score.style.setProperty("line-height",".88","important");
-        score.style.setProperty("letter-spacing","-.3px","important");
-        score.style.setProperty("margin-right","6px","important");
-        score.style.setProperty("display","inline-block","important");
-        score.style.setProperty("transform","scale(.74)","important");
-        score.style.setProperty("transform-origin","center center","important");
-      }else{
-        setTimeout(resizeSentimentScore,350);
-      }
-    }catch(error){
-      setTimeout(resizeSentimentScore,350);
-    }
+      if(!total)return;
+      var score=total.previousElementSibling;
+      if(!score&&total.parentElement)score=total.parentElement.firstElementChild;
+      if(!score)return;
+      score.style.setProperty("font-size","32px","important");
+      score.style.setProperty("line-height","0.88","important");
+      score.style.setProperty("display","inline-block","important");
+      score.style.setProperty("transform","scale(0.78)","important");
+      score.style.setProperty("transform-origin","center center","important");
+      total.style.setProperty("font-size","12px","important");
+      total.style.setProperty("margin-left","5px","important");
+    }catch(error){}
   }
 
   addScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js","tl-supabase-umd",function(){
