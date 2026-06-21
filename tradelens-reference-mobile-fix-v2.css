@@ -5,32 +5,34 @@
   .tl-ref-overview-page .brand{font-size:15px!important;letter-spacing:1.9px!important}
   .tl-ref-overview-page .icon-btn.bell{width:34px!important;height:34px!important}
 
-  .tl-ref-briefing-card{border:0!important;background:transparent!important;box-shadow:none!important;padding:0!important;margin-bottom:10px!important;min-height:0!important;height:auto!important;overflow:visible!important}
+  .tl-native-actions,.tl-native-analyse,.tl-native-settings{display:none!important}
+
+  .tl-ref-briefing-card{border:1px solid rgba(87,164,255,.76)!important;border-radius:16px!important;background:linear-gradient(160deg,rgba(5,13,32,.98),rgba(1,5,16,.98))!important;box-shadow:0 0 18px rgba(23,82,190,.18),0 0 10px rgba(139,92,246,.08),inset 0 0 26px rgba(24,75,150,.07)!important;padding:0!important;margin-bottom:10px!important;min-height:0!important;height:auto!important;overflow:hidden!important}
   .tl-ref-briefing-card:before{display:none!important}
-  .tl-ref-briefing-card>.in{padding:0!important;min-height:0!important;height:auto!important;border:1px solid rgba(87,164,255,.76)!important;border-radius:16px!important;background:linear-gradient(160deg,rgba(5,13,32,.98),rgba(1,5,16,.98))!important;box-shadow:0 0 18px rgba(23,82,190,.18),0 0 10px rgba(139,92,246,.08),inset 0 0 26px rgba(24,75,150,.07)!important;overflow:hidden!important}
-  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:14px 14px 13px!important;min-height:0!important;height:auto!important}
-  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 126px!important;gap:6px!important;min-height:202px!important;height:202px!important;align-items:center!important}
-  .tl-ref-briefing-card .tl-reference-copy{min-width:0!important}
-  .tl-ref-briefing-card .tl-native-title{font-size:15px!important;line-height:1.1!important;letter-spacing:1.15px!important;white-space:nowrap!important}
+  .tl-ref-briefing-card>.in{padding:0!important;min-height:0!important;height:auto!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:14px 14px 13px!important;min-height:0!important;height:auto!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 116px!important;gap:4px!important;min-height:184px!important;height:184px!important;align-items:center!important}
+  .tl-ref-briefing-card .tl-reference-copy{min-width:0!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-native-title{font-size:14px!important;line-height:1.08!important;letter-spacing:.75px!important;white-space:nowrap!important;overflow:visible!important;position:relative!important;z-index:8!important}
   .tl-ref-briefing-card .tl-native-date{font-size:9.5px!important;margin-top:4px!important}
-  .tl-ref-briefing-card .tl-native-kicker{font-size:9.5px!important;margin-top:17px!important;letter-spacing:1.05px!important;gap:6px!important}
+  .tl-ref-briefing-card .tl-native-kicker{font-size:9.5px!important;margin-top:15px!important;letter-spacing:1px!important;gap:6px!important}
   .tl-ref-briefing-card .tl-native-kicker:before{width:15px!important}
-  .tl-ref-briefing-card .tl-native-summary{font-size:11.5px!important;line-height:1.42!important;margin-top:8px!important}
-  .tl-ref-briefing-card .tl-native-focus{font-size:9.5px!important;line-height:1.4!important;margin-top:7px!important}
-  .tl-ref-briefing-card .tl-reference-visual{min-height:182px!important;height:182px!important;overflow:visible!important}
-  .tl-ref-briefing-card .tl-option-b-orb{width:140px!important;height:146px!important;transform:translateX(3px)!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:11.3px!important;line-height:1.38!important;margin-top:8px!important;max-width:100%!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:9.3px!important;line-height:1.37!important;margin-top:7px!important;max-width:100%!important}
+  .tl-ref-briefing-card .tl-reference-visual{min-height:170px!important;height:170px!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:130px!important;height:136px!important;transform:translateX(1px)!important}
   .tl-ref-briefing-card .tl-option-b-glow{inset:13px!important}
 
   .tl-ref-dual-grid{gap:9px!important}
-  .tl-ref-sentiment-card,.tl-ref-movers-card{min-height:300px!important;border-radius:15px!important}
+  .tl-ref-sentiment-card,.tl-ref-movers-card{min-height:286px!important;border-radius:15px!important}
   .tl-ref-sentiment-card>.in,.tl-ref-movers-card>.in{padding:13px 10px 10px!important}
   .tl-ref-sentiment-card .label,.tl-ref-movers-card .label{font-size:11px!important;letter-spacing:.8px!important}
   .tl-ref-info{right:10px!important;top:10px!important;width:18px!important;height:18px!important;font-size:10px!important}
-  .tl-ref-sentiment-card .gauge-wrap,.tl-ref-sentiment-card .tl-live-sentiment-gauge-anchor{width:142px!important;height:142px!important;margin:12px auto 1px!important}
-  .tl-ref-sentiment-card .tl-live-sentiment-score{font-size:34px!important}
+  .tl-ref-sentiment-card .gauge-wrap,.tl-ref-sentiment-card .tl-live-sentiment-gauge-anchor{width:136px!important;height:136px!important;margin:10px auto 0!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-score{font-size:32px!important}
   .tl-ref-sentiment-card .tl-live-sentiment-label{font-size:9.5px!important;margin-bottom:3px!important}
-  .tl-ref-sentiment-card .tl-sentiment-value-row>*:not(.tl-live-sentiment-score){font-size:10px!important}
-  .tl-ref-sentiment-card .tl-live-sentiment-caption{font-size:9.5px!important;margin-top:3px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row>*:not(.tl-live-sentiment-score){font-size:9.5px!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-caption{font-size:9.2px!important;margin-top:3px!important}
 
   .tl-ref-movers-card .tl-ref-mover-row{padding:8px 8px!important;margin-top:6px!important;border-radius:9px!important}
   .tl-ref-movers-card .sym,.tl-ref-movers-card .pct{font-size:11px!important}
@@ -44,7 +46,7 @@
   .tl-ref-zones-card .tl-ref-zone-row .lbl{font-size:9.5px!important}
   .tl-ref-zones-card .tl-ref-zone-row .val{font-size:11px!important}
 
-  .tl-ref-bottom-nav{height:88px!important;min-height:88px!important;padding:12px 10px max(9px,env(safe-area-inset-bottom))!important}
-  .tl-ref-nav-item svg{width:22px!important;height:22px!important}
+  .tl-ref-bottom-nav{height:84px!important;min-height:84px!important;padding:11px 10px max(8px,env(safe-area-inset-bottom))!important}
+  .tl-ref-nav-item svg{width:21px!important;height:21px!important}
   .tl-ref-nav-item,.tl-ref-nav-item *{font-size:9px!important}
 }
