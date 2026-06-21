@@ -1,0 +1,8 @@
+@media(max-width:469px){
+  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 114px!important;gap:4px!important;min-height:142px!important;height:142px!important;align-items:start!important}
+  .tl-ref-briefing-card .tl-reference-copy{min-width:0!important;overflow:visible!important;transform:translateY(-8px)!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:9.2px!important;line-height:1.26!important;margin-top:4px!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:7.8px!important;line-height:1.24!important;margin-top:4px!important}
+  .tl-ref-briefing-card .tl-reference-visual{min-height:136px!important;height:136px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:128px!important;height:132px!important;transform:translate(4px,-4px)!important}
+}
