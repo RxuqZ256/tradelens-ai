@@ -97,6 +97,18 @@
     document.head.appendChild(style);
   }
 
+  function refineCenterLayout(){
+    try{
+      var row=document.querySelector(".tl-sentiment-value-row");
+      var label=document.querySelector(".tl-sentiment-center-stack .tl-live-sentiment-label");
+      if(row){
+        row.style.setProperty("gap","6px","important");
+        row.style.setProperty("margin-left","-4px","important");
+      }
+      if(label)label.style.setProperty("margin","10px 0 0 0","important");
+    }catch(e){}
+  }
+
   function findGaugeAnchor(card,score,maxLabel){
     var start=(maxLabel&&maxLabel.parentElement)||(score&&score.parentElement);
     var node=start;
@@ -226,7 +238,7 @@
   function update(){
     var change=readGoldChange();
     var card=findSentimentCard();
-    if(change===null||!card)return;
+    if(change===null||!card){refineCenterLayout();return;}
 
     ensureStyle();
     card.classList.add("tl-live-sentiment-card");
@@ -291,6 +303,8 @@
       var svg=ensureSegmentedSvg(anchor);
       renderSegments(svg,view);
     }
+
+    refineCenterLayout();
   }
 
   function start(){
