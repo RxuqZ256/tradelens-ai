@@ -39,6 +39,22 @@
     return null;
   }
 
+  function findBriefingCard(node){
+    if(!node)return null;
+    var best=closestCard(node);
+    var current=node.parentElement;
+    while(current&&current!==node.ownerDocument.body){
+      var text=norm(current.textContent);
+      if(text.indexOf("TOP MOVERS")>=0||text.indexOf("MARKT SENTIMENT")>=0)break;
+      var rect=current.getBoundingClientRect();
+      if(text.indexOf("AI DAILY BRIEFING")>=0&&text.indexOf("MARKTUBERBLICK")>=0&&rect.width>260&&rect.width<430&&rect.height>150&&rect.height<520){
+        best=current;
+      }
+      current=current.parentElement;
+    }
+    return best;
+  }
+
   function commonAncestor(a,b){
     if(!a||!b)return null;
     var seen=[];
@@ -51,6 +67,15 @@
 
   function addClass(node,name){
     if(node&&node.classList&&!node.classList.contains(name))node.classList.add(name);
+  }
+
+  function clearWrongBriefingClasses(card){
+    if(!card)return;
+    var nested=card.querySelectorAll(".tl-ref-briefing-card,.tl-ref-card");
+    for(var i=0;i<nested.length;i++){
+      if(nested[i]===card)continue;
+      nested[i].classList.remove("tl-ref-briefing-card","tl-ref-card");
+    }
   }
 
   function findOverviewPage(doc,briefingCard){
@@ -161,7 +186,7 @@
     var link=doc.createElement("link");
     link.id=id;
     link.rel="stylesheet";
-    link.href="tradelens-reference-overview-v1.css?v=20260621u";
+    link.href="tradelens-reference-overview-v1.css?v=20260621w";
     doc.head.appendChild(link);
   }
 
@@ -182,12 +207,13 @@
       if(norm(all[i].textContent).indexOf("WICHTIGE ZONEN")===0){zonesLeaf=all[i];break;}
     }
 
-    var briefingCard=closestCard(briefingLeaf);
+    var briefingCard=findBriefingCard(briefingLeaf);
     var sentimentCard=closestCard(sentimentLeaf);
     var moversCard=closestCard(moversLeaf);
     var zonesCard=closestCard(zonesLeaf);
     var overview=findOverviewPage(doc,briefingCard);
 
+    clearWrongBriefingClasses(briefingCard);
     addClass(overview,"tl-ref-overview-page");
     addClass(briefingCard,"tl-ref-card");
     addClass(briefingCard,"tl-ref-briefing-card");
