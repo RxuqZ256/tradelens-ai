@@ -1,0 +1,14 @@
+@media(max-width:469px){
+  .tl-ref-briefing-card{height:150px!important;min-height:150px!important;max-height:150px!important;box-sizing:border-box!important;margin-bottom:6px!important;overflow:hidden!important}
+  .tl-ref-briefing-card>.in{height:100%!important;min-height:0!important;max-height:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{height:100%!important;min-height:0!important;max-height:100%!important;box-sizing:border-box!important;padding:9px 10px!important;overflow:hidden!important}
+  .tl-ref-briefing-card .tl-reference-main{height:100%!important;min-height:0!important;max-height:100%!important;grid-template-columns:minmax(0,1fr) 128px!important;gap:2px!important;align-items:start!important}
+  .tl-ref-briefing-card .tl-reference-copy{transform:translateY(2px)!important;overflow:visible!important;z-index:8!important;max-width:96%!important;padding-right:3px!important}
+  .tl-ref-briefing-card .tl-native-title{font-size:13.2px!important;line-height:1.04!important;letter-spacing:.46px!important;margin:0!important}
+  .tl-ref-briefing-card .tl-native-date{font-size:8px!important;line-height:1.1!important;margin-top:3px!important}
+  .tl-ref-briefing-card .tl-native-kicker{font-size:8.4px!important;line-height:1.1!important;margin-top:8px!important;letter-spacing:.78px!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:9.3px!important;line-height:1.24!important;margin-top:5px!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:7.9px!important;line-height:1.2!important;margin-top:4px!important}
+  .tl-ref-briefing-card .tl-reference-visual{height:100%!important;min-height:0!important;max-height:100%!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:148px!important;height:148px!important;transform:translate(14px,-6px)!important}
+}
