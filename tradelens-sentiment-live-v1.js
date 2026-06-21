@@ -99,13 +99,15 @@
 
   function refineCenterLayout(){
     try{
+      var stack=document.querySelector(".tl-sentiment-center-stack");
       var row=document.querySelector(".tl-sentiment-value-row");
       var label=document.querySelector(".tl-sentiment-center-stack .tl-live-sentiment-label");
+      if(stack)stack.style.setProperty("transform","translateX(3px)","important");
       if(row){
         row.style.setProperty("gap","6px","important");
-        row.style.setProperty("margin-left","-4px","important");
+        row.style.setProperty("margin-left","-2px","important");
       }
-      if(label)label.style.setProperty("margin","10px 0 0 0","important");
+      if(label)label.style.setProperty("margin","15px 0 0 0","important");
     }catch(e){}
   }
 
