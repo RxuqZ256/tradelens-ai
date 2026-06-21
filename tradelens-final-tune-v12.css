@@ -1,0 +1,24 @@
+@media(max-width:469px){
+  .tl-ref-briefing-card{height:130px!important;min-height:130px!important;max-height:130px!important;margin-bottom:7px!important}
+  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{padding:10px 13px 8px!important}
+  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 126px!important;gap:4px!important;align-items:start!important}
+  .tl-ref-briefing-card .tl-reference-copy{transform:translateY(-2px)!important;max-width:100%!important;padding-right:2px!important}
+  .tl-ref-briefing-card .tl-native-title{font-size:14px!important;line-height:1.04!important;letter-spacing:.48px!important;margin:0!important;white-space:nowrap!important}
+  .tl-ref-briefing-card .tl-native-date{font-size:8.6px!important;line-height:1.1!important;margin-top:4px!important}
+  .tl-ref-briefing-card .tl-native-kicker{font-size:9px!important;line-height:1.1!important;margin-top:8px!important;letter-spacing:.8px!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:10.2px!important;line-height:1.24!important;margin-top:5px!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:8.6px!important;line-height:1.2!important;margin-top:4px!important}
+  .tl-ref-briefing-card .tl-reference-visual{height:100%!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:138px!important;height:138px!important;transform:translate(9px,-8px)!important}
+
+  .tl-ref-sentiment-card{height:198px!important;min-height:198px!important;max-height:198px!important}
+  .tl-ref-sentiment-card>.in{padding:9px 8px 7px!important}
+  .tl-ref-sentiment-card .gauge-wrap,.tl-ref-sentiment-card .tl-live-sentiment-gauge-anchor{width:104px!important;height:104px!important;margin:5px auto 1px!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-svg{transform:scale(1)!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-score{font-size:27px!important;line-height:.92!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-label{font-size:8px!important;margin-bottom:2px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row{gap:1px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row>*:not(.tl-live-sentiment-score){font-size:7.8px!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-caption{font-size:7.6px!important;margin-top:1px!important}
+  .tl-ref-sentiment-card svg:not(.tl-live-sentiment-svg){max-height:24px!important;margin-top:1px!important}
+}
