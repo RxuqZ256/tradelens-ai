@@ -1,7 +1,7 @@
 (function(){
   "use strict";
 
-  var version="20260621a";
+  var version="20260621t";
   var frame=document.getElementById("app");
   var resizeBound=false;
 
@@ -123,29 +123,29 @@
       setImportant(stack,"justify-content","center");
       setImportant(stack,"z-index","8");
       setImportant(stack,"pointer-events","none");
-      setImportant(stack,"transform","none");
+      setImportant(stack,"transform","translateX(3px)");
       setImportant(stack,"will-change","auto");
 
       setImportant(row,"display","flex");
       setImportant(row,"align-items","baseline");
       setImportant(row,"justify-content","center");
-      setImportant(row,"gap","9px");
+      setImportant(row,"gap","5px");
       setImportant(row,"white-space","nowrap");
-      setImportant(row,"margin-left","-7px");
+      setImportant(row,"margin-left","-1px");
       setImportant(row,"transform","none");
 
       setImportant(score,"position","static");
       setImportant(score,"display","inline-block");
-      setImportant(score,"font-size","34px");
-      setImportant(score,"line-height","0.88");
+      setImportant(score,"font-size","31px");
+      setImportant(score,"line-height","0.9");
       setImportant(score,"font-weight","500");
-      setImportant(score,"letter-spacing","-0.2px");
+      setImportant(score,"letter-spacing","-0.1px");
       setImportant(score,"margin","0");
       setImportant(score,"transform","none");
 
       setImportant(total,"position","static");
       setImportant(total,"display","inline-block");
-      setImportant(total,"font-size","12px");
+      setImportant(total,"font-size","10px");
       setImportant(total,"line-height","1");
       setImportant(total,"color","#6f7890");
       setImportant(total,"margin","0 0 2px 0");
@@ -157,7 +157,7 @@
       setImportant(label,"line-height","1");
       setImportant(label,"font-weight","800");
       setImportant(label,"letter-spacing","0.7px");
-      setImportant(label,"margin","7px 0 0 0");
+      setImportant(label,"margin","14px 0 0 0");
       setImportant(label,"text-align","center");
       setImportant(label,"transform","none");
 
