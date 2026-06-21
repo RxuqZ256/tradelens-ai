@@ -1,0 +1,57 @@
+@media(max-width:469px){
+  .statusbar{height:38px!important;padding:5px 22px 0!important;font-size:14px!important}
+  .island{top:5px!important;width:104px!important;height:27px!important}
+
+  .tl-ref-overview-page{padding:0 12px 84px!important}
+  .tl-ref-overview-page .appbar{min-height:45px!important;padding:2px 1px 7px!important;gap:8px!important}
+  .tl-ref-overview-page .logo-hex{width:29px!important;height:29px!important}
+  .tl-ref-overview-page .brand{font-size:13.2px!important;letter-spacing:1.55px!important}
+  .tl-ref-overview-page .icon-btn.bell{width:30px!important;height:30px!important}
+
+  .tl-ref-card{box-shadow:0 0 12px rgba(23,82,190,.13),inset 0 0 18px rgba(24,75,150,.05)!important}
+  .tl-ref-briefing-card{margin-bottom:7px!important;border-radius:13px!important}
+  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{padding:10px 11px!important}
+  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 102px!important;gap:2px!important;min-height:142px!important;height:142px!important}
+  .tl-ref-briefing-card .tl-native-title{font-size:12.4px!important;line-height:1.05!important;letter-spacing:.55px!important}
+  .tl-ref-briefing-card .tl-native-date{font-size:8px!important;margin-top:3px!important}
+  .tl-ref-briefing-card .tl-native-kicker{font-size:8.2px!important;margin-top:9px!important;letter-spacing:.85px!important;gap:5px!important}
+  .tl-ref-briefing-card .tl-native-kicker:before{width:12px!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:9.4px!important;line-height:1.3!important;margin-top:5px!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:8px!important;line-height:1.28!important;margin-top:5px!important}
+  .tl-ref-briefing-card .tl-reference-visual{min-height:132px!important;height:132px!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:112px!important;height:116px!important;transform:translateX(2px)!important}
+  .tl-ref-briefing-card .tl-option-b-glow{inset:15px!important}
+  .tl-native-actions,.tl-native-analyse,.tl-native-settings{display:none!important}
+
+  .tl-ref-dual-grid{gap:7px!important}
+  .tl-ref-sentiment-card,.tl-ref-movers-card{min-height:226px!important;height:226px!important;border-radius:13px!important}
+  .tl-ref-sentiment-card>.in,.tl-ref-movers-card>.in{padding:10px 8px 8px!important}
+  .tl-ref-sentiment-card .label,.tl-ref-movers-card .label{font-size:9.5px!important;letter-spacing:.65px!important}
+  .tl-ref-info{right:8px!important;top:8px!important;width:16px!important;height:16px!important;font-size:9px!important}
+  .tl-ref-sentiment-card .gauge-wrap,.tl-ref-sentiment-card .tl-live-sentiment-gauge-anchor{width:106px!important;height:106px!important;margin:8px auto 0!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-svg{transform:scale(1)!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-score{font-size:27px!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-label{font-size:8px!important;margin-bottom:2px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row{gap:1px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row>*:not(.tl-live-sentiment-score){font-size:8px!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-caption{font-size:7.8px!important;margin-top:1px!important}
+  .tl-ref-sentiment-card svg:not(.tl-live-sentiment-svg){max-height:30px!important;margin-top:1px!important}
+
+  .tl-ref-movers-card .tl-ref-mover-row{padding:5px 6px!important;margin-top:4px!important;border-radius:8px!important;min-height:32px!important}
+  .tl-ref-movers-card .sym,.tl-ref-movers-card .pct{font-size:9.5px!important}
+  .tl-ref-movers-card .pct.pos:after,.tl-ref-movers-card .pct.neg:after{font-size:13px!important}
+  .tl-ref-movers-card .sub{font-size:7px!important;margin-top:4px!important}
+
+  .tl-ref-zones-card{margin-top:7px!important;border-radius:13px!important}
+  .tl-ref-zones-card>.in{padding:10px 9px 8px!important}
+  .tl-ref-zones-card .label{font-size:9.8px!important;margin-bottom:4px!important}
+  .tl-ref-zones-card .tl-ref-zone-row{min-height:28px!important;padding:4px 6px!important;border-radius:6px!important}
+  .tl-ref-zones-card .tl-ref-zone-row .lbl{font-size:8px!important}
+  .tl-ref-zones-card .tl-ref-zone-row .val{font-size:9px!important}
+
+  .tl-ref-bottom-nav{height:68px!important;min-height:68px!important;padding:8px 8px max(6px,env(safe-area-inset-bottom))!important}
+  .tl-ref-nav-item{min-width:48px!important}
+  .tl-ref-nav-item svg{width:18px!important;height:18px!important}
+  .tl-ref-nav-item,.tl-ref-nav-item *{font-size:7.8px!important}
+  .tl-ref-nav-item.active:after,.tl-ref-nav-item[aria-current='page']:after,.tl-ref-nav-item:first-of-type:after{bottom:-4px!important;width:26px!important}
+}
