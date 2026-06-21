@@ -10,7 +10,7 @@
         var link=doc.createElement("link");
         link.id="tl-briefing-size-v13";
         link.rel="stylesheet";
-        link.href="tradelens-briefing-size-v13.css?v=20260621ah";
+        link.href="tradelens-briefing-size-v13.css?v=20260621ai";
         doc.head.appendChild(link);
       }
       return true;
