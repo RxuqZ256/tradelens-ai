@@ -1,0 +1,19 @@
+@media(max-width:469px){
+  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{padding:8px 10px!important}
+  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 126px!important;gap:2px!important;min-height:126px!important;height:126px!important;align-items:start!important}
+  .tl-ref-briefing-card .tl-reference-copy{transform:translateY(-10px)!important;overflow:visible!important;z-index:7!important}
+  .tl-ref-briefing-card .tl-native-title{font-size:12.4px!important;line-height:1.03!important;letter-spacing:.5px!important}
+  .tl-ref-briefing-card .tl-native-date{font-size:7.8px!important;margin-top:2px!important}
+  .tl-ref-briefing-card .tl-native-kicker{font-size:8.1px!important;margin-top:8px!important;letter-spacing:.8px!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:9px!important;line-height:1.22!important;margin-top:4px!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:7.7px!important;line-height:1.2!important;margin-top:4px!important}
+
+  .tl-ref-briefing-card .tl-reference-visual{min-height:126px!important;height:126px!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-reference-visual:before{inset:-12px -26px -16px -22px!important;background:radial-gradient(circle at 50% 48%,rgba(34,247,255,.24),rgba(37,99,235,.13) 42%,transparent 72%)!important;filter:blur(12px)!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:150px!important;height:150px!important;transform:translate(9px,-7px)!important}
+  .tl-ref-briefing-card .tl-option-b-core{transform:scale(1.14)!important;filter:drop-shadow(0 0 13px rgba(34,247,255,.62)) drop-shadow(0 0 30px rgba(79,70,255,.42))!important}
+  .tl-ref-briefing-card .tl-option-b-orbits{transform:scale(1.06)!important;transform-origin:50% 48%!important}
+  .tl-ref-briefing-card .tl-option-b-ring{border-width:.75px!important;box-shadow:0 0 10px rgba(34,247,255,.22)!important}
+  .tl-ref-briefing-card .tl-option-b-dot{box-shadow:0 0 8px #fff,0 0 17px rgba(34,247,255,1)!important}
+  .tl-ref-briefing-card .tl-option-b-base-glow{width:132px!important;height:19px!important;bottom:0!important;background:radial-gradient(ellipse at center,rgba(34,247,255,.55),rgba(64,72,255,.28) 54%,transparent 80%)!important;filter:blur(7px)!important}
+}
