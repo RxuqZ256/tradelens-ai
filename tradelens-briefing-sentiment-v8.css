@@ -1,0 +1,37 @@
+@media(max-width:469px){
+  .tl-ref-briefing-card{height:220px!important;min-height:220px!important;max-height:220px!important;margin-bottom:6px!important;overflow:hidden!important}
+  .tl-ref-briefing-card>.in{height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+  .tl-ref-briefing-card .briefing,.tl-ref-briefing-card .tl-native-briefing{height:100%!important;min-height:0!important;max-height:100%!important;padding:7px 10px!important;overflow:hidden!important}
+  .tl-ref-briefing-card .tl-reference-main{grid-template-columns:minmax(0,1fr) 134px!important;gap:1px!important;height:100%!important;min-height:0!important;max-height:100%!important;align-items:start!important}
+  .tl-ref-briefing-card .tl-reference-copy{transform:translateY(-11px)!important;overflow:visible!important;z-index:8!important;max-width:94%!important;padding-right:4px!important}
+  .tl-ref-briefing-card .tl-native-title{font-size:12px!important;line-height:1.02!important;letter-spacing:.42px!important}
+  .tl-ref-briefing-card .tl-native-date{font-size:7.5px!important;margin-top:2px!important}
+  .tl-ref-briefing-card .tl-native-kicker{font-size:7.8px!important;margin-top:7px!important;letter-spacing:.75px!important}
+  .tl-ref-briefing-card .tl-native-summary{font-size:8.6px!important;line-height:1.17!important;margin-top:3px!important}
+  .tl-ref-briefing-card .tl-native-focus{font-size:7.2px!important;line-height:1.15!important;margin-top:3px!important}
+  .tl-ref-briefing-card .tl-reference-visual{height:100%!important;min-height:0!important;max-height:100%!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;overflow:visible!important}
+  .tl-ref-briefing-card .tl-option-b-orb{width:154px!important;height:154px!important;transform:translate(18px,-13px)!important}
+  .tl-ref-briefing-card .tl-option-b-base-glow{bottom:-4px!important}
+
+  .tl-ref-dual-grid{gap:6px!important;margin-top:0!important}
+  .tl-ref-sentiment-card,.tl-ref-movers-card{height:198px!important;min-height:198px!important;max-height:198px!important;border-radius:13px!important;overflow:hidden!important}
+  .tl-ref-sentiment-card>.in,.tl-ref-movers-card>.in{height:100%!important;min-height:0!important;max-height:100%!important;padding:9px 8px 7px!important;overflow:hidden!important}
+  .tl-ref-sentiment-card .label,.tl-ref-movers-card .label{font-size:9.2px!important;letter-spacing:.62px!important}
+  .tl-ref-info{right:8px!important;top:8px!important;width:16px!important;height:16px!important;font-size:9px!important}
+
+  .tl-ref-sentiment-card .gauge-wrap,.tl-ref-sentiment-card .tl-live-sentiment-gauge-anchor{width:98px!important;height:98px!important;margin:5px auto 0!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-svg{transform:scale(.98)!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-score{font-size:24px!important;line-height:.92!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-label{font-size:7.8px!important;margin-bottom:1px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row{gap:1px!important}
+  .tl-ref-sentiment-card .tl-sentiment-value-row>*:not(.tl-live-sentiment-score){font-size:7.8px!important}
+  .tl-ref-sentiment-card .tl-live-sentiment-caption{font-size:7.3px!important;margin-top:0!important}
+  .tl-ref-sentiment-card svg:not(.tl-live-sentiment-svg){max-height:22px!important;margin-top:0!important}
+
+  .tl-ref-movers-card .tl-ref-mover-row{padding:4px 6px!important;margin-top:4px!important;min-height:28px!important;border-radius:8px!important}
+  .tl-ref-movers-card .sym,.tl-ref-movers-card .pct{font-size:9px!important}
+  .tl-ref-movers-card .pct.pos:after,.tl-ref-movers-card .pct.neg:after{font-size:12px!important}
+  .tl-ref-movers-card .sub{font-size:6.8px!important;margin-top:2px!important}
+
+  .tl-ref-zones-card{margin-top:6px!important}
+}
