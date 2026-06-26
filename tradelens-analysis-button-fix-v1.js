@@ -58,32 +58,42 @@
         }
       }
 
-      var running=false;
-      function start(event){
-        if(event){
-          if(event.preventDefault)event.preventDefault();
-          if(event.stopPropagation)event.stopPropagation();
-        }
-        syncButton();
-        if(button.disabled||running)return false;
-        running=true;
-        win.setTimeout(function(){running=false;},1200);
-
+      function nativeStarted(){
         try{
-          if(typeof win.weiterZurAnalyse!=="function")return false;
-          win.weiterZurAnalyse(null);
-          win.setTimeout(syncLoadingState,40);
-          win.setTimeout(syncLoadingState,180);
-          return false;
-        }catch(_error){
-          return false;
-        }
+          if(loading.classList.contains("active"))return true;
+          if(win.AN&&(win.AN.busy||win.AN.verifying))return true;
+        }catch(_error){}
+        return false;
       }
 
-      if(button.getAttribute("data-tl-native-flow-bound")!=="1"){
-        button.setAttribute("data-tl-native-flow-bound","1");
-        button.onclick=start;
+      function fallbackAfterNativeClick(){
+        syncButton();
+        win.setTimeout(function(){
+          try{
+            if(nativeStarted())return;
+            if(typeof win.weiterZurAnalyse==="function")win.weiterZurAnalyse(null);
+          }catch(_error){}
+        },700);
       }
+
+      /* Remove only the extra property handler from older repair versions.
+         The app's original addEventListener-based handler remains intact. */
+      if(button.getAttribute("data-tl-native-flow-bound")==="1"){
+        button.onclick=null;
+        button.removeAttribute("data-tl-native-flow-bound");
+      }
+
+      if(button.getAttribute("data-tl-fallback-bound")!=="1"){
+        button.setAttribute("data-tl-fallback-bound","1");
+        button.addEventListener("click",fallbackAfterNativeClick,false);
+      }
+
+      try{
+        if(typeof win.wireAnalysisButton==="function"&&button.getAttribute("data-tl-wire-requested")!=="1"){
+          button.setAttribute("data-tl-wire-requested","1");
+          win.wireAnalysisButton();
+        }
+      }catch(_error){}
 
       syncButton();
       syncLoadingState();
