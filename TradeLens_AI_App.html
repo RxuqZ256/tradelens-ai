@@ -638,9 +638,11 @@ body{
 .ref-mover-list{margin-top:11px}
 .ref-mover{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 2px;border-top:1px solid rgba(117,145,195,.09)}
 .ref-mover:first-child{border-top:0}
-.ref-mover span{font-family:var(--f-disp);font-size:10.5px;font-weight:600;color:#dce7ff}
-.ref-mover b{font-family:var(--f-num);font-size:10px;font-weight:600;color:#66738e}
+.ref-mover b{font-family:var(--f-num);font-size:11px;font-weight:700;color:#66738e}
 .ref-mover b.pos{color:#53e5a8}.ref-mover b.neg{color:#ff5d78}
+.ref-mover b.pos::after{content:" ↗";font-size:10px;opacity:.9}
+.ref-mover b.neg::after{content:" ↘";font-size:10px;opacity:.9}
+.ref-mover span{font-family:var(--f-disp);font-size:11.5px;font-weight:700;color:#dce7ff;letter-spacing:.5px}
 .ref-data-hint{margin-top:auto;text-align:center;color:#4e5b73;font-size:8.5px}
 .ref-zones{border-radius:13px;padding:13px 14px 12px;margin-top:10px}
 .ref-zone-row{display:flex;align-items:center;justify-content:space-between;padding:9px 1px;border-top:1px solid rgba(117,145,195,.075)}
@@ -2955,8 +2957,8 @@ body.analysis-loading-active .home-ind{display:none!important}
 <nav class="bottomnav">
 <a class="nav on" data-pg="overview" href="#page-overview" onclick="go('overview')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"></path></svg></span><span class="nt">Übersicht</span></a>
 <a class="nav" data-pg="analyse" href="#page-analyse" onclick="go('analyse')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><rect height="9" width="4" x="3" y="11"></rect><rect height="15" width="4" x="10" y="5"></rect><rect height="12" width="4" x="17" y="8"></rect></svg></span><span class="nt">Analyse</span></a>
-<a class="nav" data-pg="journal" href="#page-journal" onclick="go('journal')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M4 4h12a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zM18 6h2v14"></path></svg></span><span class="nt">Journal</span></a>
-<a class="nav" data-pg="lernen" href="#page-lernen" onclick="go('lernen')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M12 4L2 9l10 5 10-5-10-5z"></path><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"></path><path d="M22 9v5"></path></svg></span><span class="nt">Lernen</span></a>
+<a class="nav" data-pg="journal" href="#page-journal" onclick="go('journal')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path><path d="M8 11h6M11 8v6"></path></svg></span><span class="nt">Scans</span></a>
+<a class="nav" data-pg="lernen" href="#page-lernen" onclick="go('lernen')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg></span><span class="nt">Watchlist</span></a>
 <a class="nav" data-pg="profil" href="#page-profil" onclick="go('profil')"><span class="ni"><svg fill="none" height="22" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="22"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 0 1 12 0v1"></path></svg></span><span class="nt">Profil</span></a>
 <div class="home-ind"></div>
 </nav>
